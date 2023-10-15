@@ -25,8 +25,11 @@ class PostsActionPermission(permissions.BasePermission):
         if view.get_object().plate in request.user.plates:
             return True
 
-        # 文章的作者可以修改或删除文章
-        if request.method == 'PATCH' or request.method == 'DELETE':
-            return request.user == view.get_object().author
+        # 文章的作者可以修改或删除文章, 但是不能设置精华
+        if request.user == view.get_object().author:
+            if request.method == 'PATCH':
+                return request.data.get('is_essence', None) is None
+            if request.method == 'DELETE':
+                return True
 
         return False

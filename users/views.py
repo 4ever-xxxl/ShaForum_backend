@@ -89,6 +89,8 @@ class UserProfileView(generics.GenericAPIView):
             queryset = self.get_object()
             serializer = UserProfileSerializer(queryset, request.data, partial=True)
             if serializer.is_valid():
+                if 'password' in request.data:
+                    queryset.set_password(request.data['password'])
                 serializer.update(queryset, serializer.validated_data)
                 user_info = serializer.data
                 return JsonResponse({'status': 'success', 'user_info': user_info})
