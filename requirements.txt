@@ -1,0 +1,17 @@
+asgiref==3.7.2
+Django==4.2.6
+django-filter==23.3
+django-js-asset==2.1.0
+django-mptt==0.15.0
+django-rest-framework==0.1.0
+django-taggit==4.0.0
+djangorestframework==3.14.0
+djangorestframework-simplejwt==5.3.0
+Markdown==3.5
+mysqlclient==2.2.0
+param @ file:///C:/b/abs_f5xzp6ism6/croot/param_1684915326009/work
+Pillow==10.0.1
+PyJWT==2.8.0
+pytz==2023.3.post1
+sqlparse==0.4.4
+tzdata==2023.3
