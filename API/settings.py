@@ -129,6 +129,8 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',  # jwt
     ],
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
+    'PAGE_SIZE': 10,
 }
 
 # 设置登录检查的URL
@@ -146,7 +148,6 @@ EMAIL_PORT = 465
 EMAIL_USE_TLS = True
 # 默认的发件人
 DEFAULT_FROM_EMAIL = 'posts < 重置密码 < from yandex.com > >'
-
 
 # JWT settings
 SIMPLE_JWT = {
