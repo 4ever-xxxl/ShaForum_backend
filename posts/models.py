@@ -44,6 +44,10 @@ class Post(models.Model):
         # toc 是渲染后的目录
         return md_content, md.toc
 
+    def increase_views(self):
+        self.views += 1
+        self.save(update_fields=['views'])
+
     def __str__(self):
         return self.title
 

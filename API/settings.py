@@ -129,12 +129,10 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',  # jwt
     ],
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
-    'PAGE_SIZE': 10,
 }
 
 # 设置登录检查的URL
-LOGIN_URL = '/user/token/'
+LOGIN_URL = '/api/token/'
 
 # SMTP服务器，改为你的邮箱的smtp!
 EMAIL_HOST = 'smtp.yandex.com'

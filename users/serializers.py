@@ -39,7 +39,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
 class UserDescSerializer(serializers.ModelSerializer):
     """
-    User serializer for user description in posts
+    User serializer for user description in other models
     """
 
     class Meta:
