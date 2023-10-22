@@ -21,13 +21,15 @@ class UserRegisterSerializer(serializers.ModelSerializer):
 class UserProfileSerializer(serializers.ModelSerializer):
     """
     User serializer for user profile
+    个人主页显示的基本信息
     """
 
     class Meta:
         model = User
         fields = (
-            'userID', 'username', 'email', 'avatar', 'stuID', 'college', 'major', 'birth_date', 'address', 'phone',
-            'is_active', 'is_superuser', 'groups', 'plates')
+            'userID', 'username', 'email', 'avatar', 'status', 'stuID', 'college', 'major', 'birth_date', 'address', 'phone',
+            'is_active', 'is_superuser', 'groups', 'date_joined', 'last_login')
+        read_only_fields = ('userID', 'username', 'email', 'is_superuser', 'date_joined',  'last_login')
 
     def update(self, instance, validated_data):
         if 'password' in validated_data:
@@ -42,4 +44,5 @@ class UserDescSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('userID', 'username', 'email')
+        fields = ('userID', 'username', 'status', 'avatar')
+        read_only_fields = ('userID', 'username', 'status', 'avatar')

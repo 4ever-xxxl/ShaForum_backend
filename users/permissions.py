@@ -12,12 +12,15 @@ class UserProfilePermission(BasePermission):
         if request.method in permissions.SAFE_METHODS:
             return True
 
-        # 管理员可以对所有用户进行操作
+        # 超级管理员
         if request.user.is_superuser:
             return True
 
+        if request.method == 'POST':
+            return request.uesr.has_perm('users.change_user')
+
         # 用户修改或删除自己的信息
         if request.method == 'PATCH' or request.method == 'DELETE':
-            return request.user == self.get_object()
+            return request.user == view.get_object()
 
         return False

@@ -1,10 +1,9 @@
 from django.contrib.auth import authenticate, login, logout
 from django.http import JsonResponse
 from rest_framework import generics, permissions
-from rest_framework.generics import get_object_or_404
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from permissions import UserProfilePermission
+from users.permissions import UserProfilePermission
 from users.serializers import UserRegisterSerializer, UserProfileSerializer
 from users.models import User
 
@@ -28,6 +27,7 @@ class UserRegisterView(generics.CreateAPIView):
 
 class UserLoginView(generics.GenericAPIView):
     permission_classes = [permissions.AllowAny]
+    serializer_class = UserProfileSerializer
 
     def post(self, request, *args, **kwargs):
         try:
@@ -78,47 +78,31 @@ class UserProfileView(generics.GenericAPIView):
             return JsonResponse({'status': 'failed', 'message': str(e)})
 
     def post(self, request, *args, **kwargs):
-        """
-        Update user profile for admin
-        :param request:
-        :param args:
-        :param kwargs:
-        :return:
-        """
         try:
             queryset = self.get_object()
             serializer = UserProfileSerializer(queryset, request.data, partial=True)
-            if serializer.is_valid():
-                if 'password' in request.data:
-                    queryset.set_password(request.data['password'])
-                serializer.update(queryset, serializer.validated_data)
-                user_info = serializer.data
-                return JsonResponse({'status': 'success', 'user_info': user_info})
-            else:
-                return JsonResponse({'status': 'failed', 'message': serializer.errors})
+            serializer.is_valid(raise_exception=True)
+            serializer.update(queryset, serializer.validated_data)
+            if 'password' in request.data:
+                queryset.set_password(request.data['password'])
+                queryset.save()
+            user_info = serializer.data
+            return JsonResponse({'status': 'success', 'user_info': user_info})
         except Exception as e:
             return JsonResponse({'status': 'failed', 'message': str(e)})
 
     def patch(self, request, *args, **kwargs):
-        """
-        Update user profile partially for normal user
-        :param request:
-        :param args:
-        :param kwargs:
-        :return:
-        """
         try:
-            disputfields = ['username', 'email', 'password', 'is_active', 'groups', 'plates']
-            if any([field in request.data for field in disputfields]):
-                return JsonResponse({'status': 'failed', 'message': 'invalid field'})
             queryset = self.get_object()
+            read_only_fields = ('groups', 'is_active')
+            for item in read_only_fields:
+                if item in request.data:
+                    raise Exception('read only field cannot be changed')
             serializer = UserProfileSerializer(queryset, request.data, partial=True)
-            if serializer.is_valid():
-                serializer.update(queryset, serializer.validated_data)
-                user_info = serializer.data
-                return JsonResponse({'status': 'success', 'user_info': user_info})
-            else:
-                return JsonResponse({'status': 'failed', 'message': serializer.errors})
+            serializer.is_valid(raise_exception=True)
+            serializer.update(queryset, serializer.validated_data)
+            user_info = serializer.data
+            return JsonResponse({'status': 'success', 'user_info': user_info})
         except Exception as e:
             return JsonResponse({'status': 'failed', 'message': str(e)})
 
