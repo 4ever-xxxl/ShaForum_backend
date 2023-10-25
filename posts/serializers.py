@@ -104,16 +104,26 @@ class PostsDetailSerializer(serializers.ModelSerializer):
     collection_count = serializers.SerializerMethodField()
     plate_id = serializers.IntegerField(write_only=True, required=False)
 
+    body_html = serializers.SerializerMethodField()
+    toc_html = serializers.SerializerMethodField()
+
     class Meta:
         model = Post
         fields = "__all__"
-        read_only_fields = ('postID', 'author', 'created', 'last_modified', 'views', 'whoLikes', 'whoCollects')
+        read_only_fields = (
+            'postID', 'author', 'created', 'last_modified', 'views', 'whoLikes', 'whoCollects', 'body_html', 'toc_html')
 
     def get_like_count(self, obj):
         return obj.whoLikes.count()
 
     def get_collection_count(self, obj):
         return obj.whoCollects.count()
+
+    def get_body_html(self, obj):
+        return obj.get_md()[0]
+
+    def get_toc_html(self, obj):
+        return obj.get_md()[1]
 
 
 # endregion
@@ -122,6 +132,7 @@ class PostsDetailSerializer(serializers.ModelSerializer):
 # region Plate
 class PlateListSerializer(serializers.ModelSerializer):
     moderators = serializers.SerializerMethodField()
+
     #  managePlates = serializers.SerializerMethodField()
 
     class Meta:
@@ -158,6 +169,7 @@ class PlateCreateSerializer(serializers.ModelSerializer):
         model = Plate
         fields = "__all__"
         read_only_fields = ("plateID",)
+
 
 # endregion
 
