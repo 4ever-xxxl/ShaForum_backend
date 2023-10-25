@@ -78,12 +78,12 @@ class PostsListSerializer(serializers.ModelSerializer):
     author = UserDescSerializer()
     content = serializers.SerializerMethodField()
     like_count = serializers.SerializerMethodField()
-    collection_count = serializers.SerializerMethodField()
+    collect_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Post
         fields = ('postID', 'title', 'content', 'author', 'created', 'is_essence', 'tags', 'plate', 'views', 'coverImg',
-                  'like_count', 'collection_count')
+                  'like_count', 'collect_count')
         read_only_fields = ("__all__",)
 
     def get_content(self, obj):
@@ -92,7 +92,7 @@ class PostsListSerializer(serializers.ModelSerializer):
     def get_like_count(self, obj):
         return obj.whoLikes.count()
 
-    def get_collection_count(self, obj):
+    def get_collect_count(self, obj):
         return obj.whoCollects.count()
 
 
@@ -101,7 +101,7 @@ class PostsDetailSerializer(serializers.ModelSerializer):
     author = UserDescSerializer(read_only=True)
     plate = PlateDescSerializer(read_only=True)
     like_count = serializers.SerializerMethodField()
-    collection_count = serializers.SerializerMethodField()
+    collect_count = serializers.SerializerMethodField()
     plate_id = serializers.IntegerField(write_only=True, required=False)
 
     body_html = serializers.SerializerMethodField()
@@ -116,7 +116,7 @@ class PostsDetailSerializer(serializers.ModelSerializer):
     def get_like_count(self, obj):
         return obj.whoLikes.count()
 
-    def get_collection_count(self, obj):
+    def get_collect_count(self, obj):
         return obj.whoCollects.count()
 
     def get_body_html(self, obj):

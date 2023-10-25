@@ -24,3 +24,17 @@ class UserProfilePermission(BasePermission):
             return request.user == view.get_object()
 
         return False
+
+    def has_object_permission(self, request, view, obj):
+        if request.method in permissions.SAFE_METHODS:
+            return True
+
+        # 超级管理员
+        if request.user.is_superuser:
+            return True
+
+        # 用户修改或删除自己的信息
+        if request.method == 'PATCH' or request.method == 'DELETE':
+            return request.user == obj
+
+        return False
