@@ -3,7 +3,7 @@ from taggit.serializers import TagListSerializerField
 
 from users.models import User
 from posts.models import Post, Plate, ManagePlate
-from users.serializers import UserDescSerializer
+from users.serializers import UserDescSerializer, UserBriefSerializer
 
 
 # region Description
@@ -23,11 +23,23 @@ class ManagePlateDescSerializer(serializers.ModelSerializer):
     Plate serializer for plate description in posts
     """
     moderator = UserDescSerializer()
+
+    class Meta:
+        model = ManagePlate
+        fields = ('mpID', 'moderator', 'created')
+        read_only_fields = ("__all__",)
+
+
+class ManagePlateListSerializer(serializers.ModelSerializer):
+    """
+    Plate serializer for plate description in posts
+    """
+    moderator = UserBriefSerializer()
     plate = PlateDescSerializer()
 
     class Meta:
         model = ManagePlate
-        fields = ('mpID',  'plate', 'moderator', 'created')
+        fields = ('mpID', 'plate', 'moderator', 'created')
         read_only_fields = ("__all__",)
 
 
@@ -110,7 +122,6 @@ class PostsDetailSerializer(serializers.ModelSerializer):
 # region Plate
 class PlateListSerializer(serializers.ModelSerializer):
     moderators = serializers.SerializerMethodField()
-    # TODO: 加上managePlates
     #  managePlates = serializers.SerializerMethodField()
 
     class Meta:
@@ -122,16 +133,47 @@ class PlateListSerializer(serializers.ModelSerializer):
         moderators = User.objects.filter(managePlates__plate=obj)
         return UserDescSerializer(moderators, many=True).data
 
-    # def get_managePlates(self, obj):
-    #     managePlates = ManagePlate.objects.filter(plate=obj)
-    #     return ManagePlateDescSerializer(managePlates, many=True).data
-
 
 class PlateDetailSerializer(serializers.ModelSerializer):
-    moderators = UserDescSerializer(many=True, required=False)
+    # TODO:这里重复了moderator的信息, 待前后端交接时沟通
+    moderators = serializers.SerializerMethodField()
+    managePlates = serializers.SerializerMethodField()
 
     class Meta:
         model = Plate
         fields = "__all__"
+        read_only_fields = ("__all__",)
+
+    def get_moderators(self, obj):
+        moderators = User.objects.filter(managePlates__plate=obj)
+        return UserDescSerializer(moderators, many=True).data
+
+    def get_managePlates(self, obj):
+        managePlates = ManagePlate.objects.filter(plate=obj)
+        return ManagePlateDescSerializer(managePlates, many=True).data
+
+
+class PlateCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Plate
+        fields = "__all__"
+        read_only_fields = ("plateID",)
+
+# endregion
+
+
+# region ManagePlate
+class ManagePlateCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ManagePlate
+        fields = "__all__"
+        read_only_fields = ("mpID", 'created')
+
+
+class ManagePlateActionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ManagePlate
+        fields = ('mpID', 'plate', 'moderator', 'created')
+        read_only_fields = ("__all__",)
 
 # endregion

@@ -19,5 +19,8 @@ urlpatterns = [
     path('plate/<int:pk>/', views.PlateDetailView.as_view(), name='plate_detail'),  # 用于获取板块详情
     path('plate/create/', views.PlateCreateView.as_view(), name='plate_create'),  # 用于创建板块
     path('plate/action/<int:pk>/', views.PlateActionView.as_view(), name='plate_action'),  # 对板块进行操作
+    path('plate/manage/list/', views.ManagePlateListView.as_view(), name='ManagePlateListView'),  # 用于获取管理板块列表
+    path('plate/manage/create/', views.ManagePlateCreateView.as_view(), name='ManagePlateCreateView'),  # 用于任命版主
+    path('plate/manage/<int:pk>/', views.ManagePlateActionView.as_view(), name='plate_manage'),  # 对板块进行管理
 
 ]

@@ -47,8 +47,47 @@ class PlateActionPermission(permissions.BasePermission):
         if request.user.is_superuser:
             return True
 
+        # 普通管理员可以创建板块
+        if request.method == 'POST':
+            # return "admin" in request.user.groups.values_list('name', flat=True)
+            return request.user.has_perm('posts.add_plate')
+
         # 版主可以对自己版块进行修改操作
         if request.method == 'PATCH':
-            return view.get_object() in request.user.plates
+            if request.user.has_perm('posts.change_plate'):
+                return True
+            else:
+                return view.get_object() in request.user.managePlates.all()
+
+        # 管理员可以删除板块
+        if request.method == 'DELETE':
+            return request.user.has_perm('posts.delete_plate')
+
+        return False
+
+
+class ManagePlateActionPermission(permissions.BasePermission):
+    """
+    Global permission check for manage plate action
+    """
+    def has_permission(self, request, view):
+        """
+        Check if user is authenticated
+        """
+        if request.method in permissions.SAFE_METHODS:
+            return True
+
+        # 管理员可以对所有板块进行操作
+        if request.user.is_superuser:
+            return True
+
+        if request.method == 'POST':
+            return request.user.has_perm('posts.add_manageplate')
+
+        if request.method == 'PATCH':
+            return request.user.has_perm('posts.change_manageplate')
+
+        if request.method == 'DELETE':
+            return request.user.has_perm('posts.delete_manageplate')
 
         return False

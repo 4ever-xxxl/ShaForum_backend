@@ -1,14 +1,15 @@
-import django_filters
+from django.contrib.auth.models import Group
 from django.db.models import Q
 from django.http import HttpResponse, JsonResponse
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import generics, filters
+from rest_framework import generics
 
 from CustomPagination import CustomPagination
-from posts.models import Post, Plate, LikeUserPost, CollectUserPost
+from posts.models import Post, Plate, LikeUserPost, CollectUserPost, ManagePlate
+from posts.permissions import PostsActionPermission, PlateActionPermission, ManagePlateActionPermission
 from posts.serializers import PostsListSerializer, PostsDetailSerializer, PlateListSerializer, PlateDetailSerializer, \
-    PostCreateSerializer, PlateDescSerializer
-from posts.permissions import PostsActionPermission, PlateActionPermission
+    PostCreateSerializer, PlateDescSerializer, PlateCreateSerializer, ManagePlateListSerializer, \
+    ManagePlateCreateSerializer, ManagePlateActionSerializer
 
 
 def index(request):
@@ -133,6 +134,7 @@ class PostLikeView(generics.GenericAPIView):
     """
     Like or unlike a post instance by postID.
     """
+
     def get_object(self):
         return Post.objects.get(pk=self.kwargs['pk'])
 
@@ -161,6 +163,7 @@ class PostCollectView(generics.GenericAPIView):
     """
     Collect or uncollect a post instance by postID.
     """
+
     def get_object(self):
         return Post.objects.get(pk=self.kwargs['pk'])
 
@@ -217,27 +220,42 @@ class PlateListView(generics.ListAPIView):
     def get(self, request, *args, **kwargs):
         try:
             queryset = self.filter_queryset(self.get_queryset())
+            page = self.paginate_queryset(queryset)
+            if page is None:
+                raise Exception("page is None")
             serializer = self.get_serializer(queryset, many=True)
-            return JsonResponse({'status': "success", 'platelist': serializer.data})
+            return self.get_paginated_response(serializer.data)
         except Exception as e:
             return JsonResponse({'status': "fail", 'message': str(e)})
 
 
 class PlateDetailView(generics.RetrieveAPIView):
     queryset = Plate.objects.all()
-    serializer_class = PlateListSerializer
+    serializer_class = PlateDetailSerializer
 
     def get(self, request, *args, **kwargs):
         try:
             plate = self.get_object()
-            serializer = PlateListSerializer(plate)
+            serializer = self.get_serializer(plate)
             return JsonResponse({'status': "success", 'plate': serializer.data})
         except Exception as e:
             return JsonResponse({'status': "fail", 'message': str(e)})
 
-class PlateCreateView(generics.CreateAPIView):
-    pass
 
+class PlateCreateView(generics.CreateAPIView):
+    permission_classes = [PlateActionPermission]
+    queryset = Plate.objects.all()
+    serializer_class = PlateCreateSerializer
+
+    def post(self, request, *args, **kwargs):
+        try:
+            serializer = PlateCreateSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            new_plate = Plate.objects.get(plateID=serializer.data['plateID'])
+            return JsonResponse({'status': "success", 'plate': PlateDescSerializer(new_plate).data})
+        except Exception as e:
+            return JsonResponse({'status': "fail", 'message': str(e)})
 
 
 class PlateActionView(generics.RetrieveUpdateDestroyAPIView):
@@ -270,6 +288,99 @@ class PlateActionView(generics.RetrieveUpdateDestroyAPIView):
         try:
             plate = self.get_object()
             plate.delete()
+            return JsonResponse({'status': "success", 'message': "delete success"})
+        except Exception as e:
+            return JsonResponse({'status': "fail", 'message': str(e)})
+
+
+# endregion
+
+# region ManagePlate
+
+class ManagePlateListView(generics.ListAPIView):
+    pagination_class = CustomPagination
+    queryset = ManagePlate.objects.all()
+    serializer_class = ManagePlateListSerializer
+    filter_backends = [DjangoFilterBackend]
+    filter_fields = {
+        'mpID': ['exact'],
+        'plate__plateID': ['exact'],
+        'plate__name': ['exact', 'contains'],
+        'moderator__userID': ['exact'],
+        'moderator__username': ['exact', 'contains'],
+    }
+
+    def post(self, request, *args, **kwargs):
+        try:
+            query_filters = Q()
+            for field, value in request.data.items():
+                if field in self.filter_fields:
+                    lookup = f"{field}__icontains"  # 使用icontains进行部分匹配
+                    query_filters &= Q(**{lookup: value})
+            queryset = self.filter_queryset(self.get_queryset()).filter(query_filters)
+            page = self.paginate_queryset(queryset)
+            if page is None:
+                raise Exception("page is None")
+            serializer = self.get_serializer(queryset, many=True)
+            return self.get_paginated_response(serializer.data)
+        except Exception as e:
+            return JsonResponse({'status': "fail", 'message': str(e)})
+
+    def get(self, request, *args, **kwargs):
+        try:
+            queryset = self.filter_queryset(self.get_queryset())
+            page = self.paginate_queryset(queryset)
+            if page is None:
+                raise Exception("page is None")
+            serializer = self.get_serializer(queryset, many=True)
+            return self.get_paginated_response(serializer.data)
+        except Exception as e:
+            return JsonResponse({'status': "fail", 'message': str(e)})
+
+
+class ManagePlateCreateView(generics.CreateAPIView):
+    permission_classes = [ManagePlateActionPermission]
+    queryset = ManagePlate.objects.all()
+    serializer_class = ManagePlateCreateSerializer
+
+    def post(self, request, *args, **kwargs):
+        try:
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            new_manage = serializer.save()
+            user = new_manage.moderator
+            if user.managePlates.count() == 1:  # 如果用户原来没有管理的板块, 则将其加入moderator组
+                group = Group.objects.get(name='moderator')
+                user.groups.add(group)
+            return JsonResponse({'status': "success", 'manage_plate': ManagePlateListSerializer(new_manage).data})
+        except Exception as e:
+            return JsonResponse({'status': "fail", 'message': str(e)})
+
+
+class ManagePlateActionView(generics.RetrieveDestroyAPIView):
+    permission_classes = [ManagePlateActionPermission]
+    queryset = ManagePlate.objects.all()
+    serializer_class = ManagePlateActionSerializer
+
+    def get_object(self):
+        return self.queryset.get(pk=self.kwargs['pk'])
+
+    def get(self, request, *args, **kwargs):
+        try:
+            manage_plate = self.get_object()
+            serializer = self.get_serializer(manage_plate)
+            return JsonResponse({'status': "success", 'manage_plate': serializer.data})
+        except Exception as e:
+            return JsonResponse({'status': "fail", 'message': str(e)})
+
+    def delete(self, request, *args, **kwargs):
+        try:
+            manage_plate = self.get_object()
+            user = manage_plate.moderator
+            manage_plate.delete()
+            if user.managePlates.count() == 0:  # 如果删除后用户没有管理的板块了, 则将其从moderator组中移除
+                group = Group.objects.get(name='moderator')
+                user.groups.remove(group)
             return JsonResponse({'status': "success", 'message': "delete success"})
         except Exception as e:
             return JsonResponse({'status': "fail", 'message': str(e)})

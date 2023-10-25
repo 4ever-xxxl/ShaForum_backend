@@ -115,7 +115,7 @@ class UserProfileView(generics.GenericAPIView):
 
 
 class UserListView(generics.ListAPIView):
-    permission_classes = [permissions.IsAdminUser]
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     serializer_class = UserProfileSerializer
     queryset = User.objects.all()
 
