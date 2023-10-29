@@ -11,9 +11,8 @@ urlpatterns = [
     path('post/like/<int:pk>/', views.PostLikeView.as_view(), name='post_like'),  # 对帖子进行点赞
     path('post/collect/<int:pk>/', views.PostCollectView.as_view(), name='post_collect'),  # 对帖子进行收藏
     path('post/coverImg/<int:pk>/', views.PostCoverImgView.as_view(), name='post_coverImg'),  # 对帖子进行封面图片操作
-    # TODO: 评论功能
-    # path('post/comment/<int:pk>/', views.PostCommentView.as_view(), name='post_comment'),  # 对帖子进行评论
-    # path('post/comment/list/<int:pk>/', views.PostCommentListView.as_view(), name='post_comment_list'),  # 获取帖子评论列表
+    path('post/comment/<int:pk>/', views.PostCommentView.as_view(), name='post_comment'),  # 对帖子进行评论
+    path('post/comment/list/<int:pk>/', views.PostCommentListView.as_view(), name='post_comment_list'),  # 获取帖子评论列表
 
 
     path('plate/list/', views.PlateListView.as_view(), name='plate_list'),  # 用于获取板块列表

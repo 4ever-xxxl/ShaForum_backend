@@ -5,12 +5,14 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics
 
 from CustomPagination import CustomPagination
+from comments.models import Comment
 from posts.models import Post, Plate, LikeUserPost, CollectUserPost, ManagePlate
 from posts.permissions import PostsActionPermission, PlateActionPermission, ManagePlateActionPermission, \
     PostCoverImgPermission
 from posts.serializers import PostsListSerializer, PostsDetailSerializer, PlateListSerializer, PlateDetailSerializer, \
     PostCreateSerializer, PlateDescSerializer, PlateCreateSerializer, ManagePlateListSerializer, \
     ManagePlateCreateSerializer, ManagePlateActionSerializer, PostCoverImgSerializer
+from comments.serializers import CommentCreateSerializer, CommentDetailSerializer, CommentListSerializer
 
 
 def index(request):
@@ -224,6 +226,51 @@ class PostCollectView(generics.GenericAPIView):
             collect_user_post = CollectUserPost.objects.get(user=request.user, post=post)
             collect_user_post.delete()
             return JsonResponse({'status': "success", 'message': "uncollect success"})
+        except Exception as e:
+            return JsonResponse({'status': "fail", 'message': str(e)})
+
+
+# endregion
+
+# region Comment
+
+class PostCommentView(generics.GenericAPIView):
+    """
+    Create a comment instance.
+    """
+    queryset = Comment.objects.all()
+    serializer_class = CommentCreateSerializer
+
+    def get_object(self):
+        return Post.objects.get(pk=self.kwargs['pk'])
+
+    def post(self, request, *args, **kwargs):
+        try:
+            cpdata = request.data.copy()
+            cpdata['author'] = request.user.userID
+            cpdata['post'] = self.kwargs['pk']
+            serializer = CommentCreateSerializer(data=cpdata)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            new_comment = Comment.objects.get(commentID=serializer.data['commentID'])
+            return JsonResponse({'status': "success", 'comment': CommentDetailSerializer(new_comment).data})
+        except Exception as e:
+            return JsonResponse({'status': "fail", 'message': str(e)})
+
+
+class PostCommentListView(generics.ListAPIView):
+    queryset = Comment.objects.all()
+    serializer_class = CommentListSerializer
+
+    def get_object(self):
+        return Post.objects.get(pk=self.kwargs['pk'])
+
+    def get(self, request, *args, **kwargs):
+        try:
+            post = self.get_object()
+            queryset = self.filter_queryset(self.get_queryset()).filter(post=post)
+            serializer = self.get_serializer(queryset, many=True)
+            return JsonResponse({'status': "success", 'comments': serializer.data})
         except Exception as e:
             return JsonResponse({'status': "fail", 'message': str(e)})
 
