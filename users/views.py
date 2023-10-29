@@ -3,8 +3,8 @@ from django.http import JsonResponse
 from rest_framework import generics, permissions
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from users.permissions import UserProfilePermission
-from users.serializers import UserRegisterSerializer, UserProfileSerializer
+from users.permissions import UserProfilePermission, UserAvatarPermission
+from users.serializers import UserRegisterSerializer, UserProfileSerializer, UserAvatarSerializer
 from users.models import User
 
 
@@ -141,5 +141,40 @@ class UserPasswordChangeView(generics.GenericAPIView):
                 return JsonResponse({'status': 'success'})
             else:
                 return JsonResponse({'status': 'failed', 'message': 'wrong password'})
+        except Exception as e:
+            return JsonResponse({'status': 'failed', 'message': str(e)})
+
+
+class UserAvatarView(generics.GenericAPIView):
+    permission_classes = [UserAvatarPermission]
+    serializer_class = UserAvatarSerializer
+
+    def get_object(self):
+        return User.objects.get(userID=self.kwargs['pk'])
+
+    def get(self, request, *args, **kwargs):
+        try:
+            user_info = UserAvatarSerializer(self.get_object()).data
+            return JsonResponse({'status': 'success', 'user_info': user_info})
+        except Exception as e:
+            return JsonResponse({'status': 'failed', 'message': str(e)})
+
+    def post(self, request, *args, **kwargs):
+        try:
+            tmpUser = self.get_object()
+            serializer = self.serializer_class(tmpUser, request.data, partial=True)
+            serializer.is_valid(raise_exception=True)
+            tmpUser.avatar.delete()
+            serializer.update(tmpUser, serializer.validated_data)
+            user_info = serializer.data
+            return JsonResponse({'status': 'success', 'user_info': user_info})
+        except Exception as e:
+            return JsonResponse({'status': 'failed', 'message': str(e)})
+
+    def delete(self, request, *args, **kwargs):
+        try:
+            tmpUser = self.get_object()
+            tmpUser.avatar.delete()
+            return JsonResponse({'status': 'success'})
         except Exception as e:
             return JsonResponse({'status': 'failed', 'message': str(e)})

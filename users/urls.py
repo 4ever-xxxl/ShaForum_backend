@@ -1,6 +1,8 @@
+from django.conf.urls.static import static
 from django.urls import path
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView, TokenBlacklistView, TokenVerifyView
 
+import settings
 from . import views
 
 app_name = 'users'
@@ -17,5 +19,7 @@ urlpatterns = [
     path("logout/", views.UserLogoutView.as_view(), name="logout"),
     path("profile/<int:pk>/", views.UserProfileView.as_view(), name="profile"),
     path("user/list/", views.UserListView.as_view(), name="userlist"),
+    path("user/avatar/<int:pk>/", views.UserAvatarView.as_view(), name="avatar"),
     path("password/change/", views.UserPasswordChangeView.as_view(), name="password_change"),
 ]
+

@@ -25,7 +25,14 @@ class UserProfilePermission(BasePermission):
 
         return False
 
-    def has_object_permission(self, request, view, obj):
+
+class UserAvatarPermission(BasePermission):
+    """
+    Global permission check for user avatar.
+    :description: admin has all permissions. user can view all avatars and update his own avatar.
+    """
+
+    def has_permission(self, request, view):
         if request.method in permissions.SAFE_METHODS:
             return True
 
@@ -33,8 +40,4 @@ class UserProfilePermission(BasePermission):
         if request.user.is_superuser:
             return True
 
-        # 用户修改或删除自己的信息
-        if request.method == 'PATCH' or request.method == 'DELETE':
-            return request.user == obj
-
-        return False
+        return request.user == view.get_object()

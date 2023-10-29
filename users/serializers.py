@@ -27,14 +27,25 @@ class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = (
-            'userID', 'username', 'email', 'avatar', 'status', 'stuID', 'college', 'major', 'birth_date', 'address', 'phone',
+            'userID', 'username', 'email', 'avatar', 'status', 'stuID', 'college', 'major', 'birth_date', 'address',
+            'phone',
             'is_active', 'is_superuser', 'groups', 'date_joined', 'last_login')
-        read_only_fields = ('userID', 'username', 'email', 'is_superuser', 'date_joined',  'last_login')
+        read_only_fields = ('userID', 'username', 'email', 'is_superuser', 'date_joined', 'last_login')
 
     def update(self, instance, validated_data):
         if 'password' in validated_data:
             instance.set_password(validated_data.pop('password'))
         return super().update(instance, validated_data)
+
+
+class UserAvatarSerializer(serializers.ModelSerializer):
+    """
+    User serializer for user avatar
+    """
+
+    class Meta:
+        model = User
+        fields = ('userID', 'avatar')
 
 
 class UserDescSerializer(serializers.ModelSerializer):

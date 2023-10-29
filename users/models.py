@@ -9,7 +9,7 @@ class User(AbstractUser):
     userID = models.AutoField(primary_key=True, verbose_name='用户ID')
     username = models.CharField(max_length=20, unique=True, verbose_name='用户名')
     email = models.EmailField(unique=True, verbose_name='邮箱')
-    avatar = models.ImageField(upload_to='media/avatars/', null=True, blank=True, verbose_name='头像')
+    avatar = models.ImageField(upload_to='avatars', null=True, blank=True, verbose_name='头像')
     stuID = models.CharField(max_length=20, null=True, blank=True, verbose_name='学号')
     college = models.CharField(max_length=100, null=True, blank=True, verbose_name='学院')
     major = models.CharField(max_length=100, null=True, blank=True, verbose_name='专业')

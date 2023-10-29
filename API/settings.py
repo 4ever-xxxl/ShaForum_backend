@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 import datetime
+import os.path
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -152,3 +153,7 @@ SIMPLE_JWT = {
     'USER_ID_FIELD': 'userID',
     "ACCESS_TOKEN_LIFETIME": datetime.timedelta(days=1),
 }
+
+# 上传文件的路径
+MEDIA_URL = '/api/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
