@@ -155,7 +155,7 @@ class UserAvatarView(generics.GenericAPIView):
     def get(self, request, *args, **kwargs):
         try:
             user_info = UserAvatarSerializer(self.get_object()).data
-            return JsonResponse({'status': 'success', 'user_info': user_info})
+            return JsonResponse({'status': 'success', 'user': user_info})
         except Exception as e:
             return JsonResponse({'status': 'failed', 'message': str(e)})
 
@@ -175,6 +175,7 @@ class UserAvatarView(generics.GenericAPIView):
         try:
             tmpUser = self.get_object()
             tmpUser.avatar.delete()
-            return JsonResponse({'status': 'success'})
+            tmpUser.save()
+            return JsonResponse({'status': 'success', 'message': 'avatar deleted'})
         except Exception as e:
             return JsonResponse({'status': 'failed', 'message': str(e)})

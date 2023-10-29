@@ -111,7 +111,8 @@ class PostsDetailSerializer(serializers.ModelSerializer):
         model = Post
         fields = "__all__"
         read_only_fields = (
-            'postID', 'author', 'created', 'last_modified', 'views', 'whoLikes', 'whoCollects', 'body_html', 'toc_html')
+            'postID', 'author', 'coverImg', 'created', 'last_modified', 'views', 'whoLikes', 'whoCollects', 'body_html',
+            'toc_html')
 
     def get_like_count(self, obj):
         return obj.whoLikes.count()
@@ -124,6 +125,12 @@ class PostsDetailSerializer(serializers.ModelSerializer):
 
     def get_toc_html(self, obj):
         return obj.get_md()[1]
+
+
+class PostCoverImgSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Post
+        fields = ('postID', 'coverImg',)
 
 
 # endregion

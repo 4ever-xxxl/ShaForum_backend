@@ -13,7 +13,7 @@ class Post(models.Model):
     title = models.CharField(max_length=100, verbose_name='标题')
     content = models.TextField(verbose_name='内容')
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="posts", verbose_name='作者')
-    coverImg = models.ImageField(upload_to='media/covers/', null=True, blank=True, verbose_name='封面')
+    coverImg = models.ImageField(upload_to='covers', null=True, blank=True, verbose_name='封面')
     plate = models.ForeignKey('Plate', on_delete=models.CASCADE, related_name="posts", verbose_name='板块')
     created = models.DateTimeField(auto_now_add=True, verbose_name='创建时间')
     last_modified = models.DateTimeField(auto_now=True, verbose_name='最后修改时间')

@@ -6,10 +6,11 @@ from rest_framework import generics
 
 from CustomPagination import CustomPagination
 from posts.models import Post, Plate, LikeUserPost, CollectUserPost, ManagePlate
-from posts.permissions import PostsActionPermission, PlateActionPermission, ManagePlateActionPermission
+from posts.permissions import PostsActionPermission, PlateActionPermission, ManagePlateActionPermission, \
+    PostCoverImgPermission
 from posts.serializers import PostsListSerializer, PostsDetailSerializer, PlateListSerializer, PlateDetailSerializer, \
     PostCreateSerializer, PlateDescSerializer, PlateCreateSerializer, ManagePlateListSerializer, \
-    ManagePlateCreateSerializer, ManagePlateActionSerializer
+    ManagePlateCreateSerializer, ManagePlateActionSerializer, PostCoverImgSerializer
 
 
 def index(request):
@@ -129,6 +130,45 @@ class PostActionView(generics.RetrieveUpdateDestroyAPIView):
         except Exception as e:
             return JsonResponse({'status': "fail", 'message': str(e)})
 
+
+class PostCoverImgView(generics.GenericAPIView):
+    """
+    Action on a post instance's coverImg by postID.
+    """
+    searliazer_class = PostCoverImgSerializer
+    permission_classes = [PostCoverImgPermission]
+
+    def get_object(self):
+        return Post.objects.get(pk=self.kwargs['pk'])
+
+    def get(self, request, *args, **kwargs):
+        try:
+            post = self.get_object()
+            post_info = self.searliazer_class(post).data
+            return JsonResponse({'status': "success", 'post': post_info})
+        except Exception as e:
+            return JsonResponse({'status': "fail", 'message': str(e)})
+
+    def post(self, request, *args, **kwargs):
+        try:
+            post = self.get_object()
+            serializer = self.searliazer_class(post, data=request.data)
+            serializer.is_valid(raise_exception=True)
+            post.coverImg.delete()
+            serializer.save()
+            post_info = serializer.data
+            return JsonResponse({'status': "success", 'post': post_info})
+        except Exception as e:
+            return JsonResponse({'status': "fail", 'message': str(e)})
+
+    def delete(self, request, *args, **kwargs):
+        try:
+            post = self.get_object()
+            post.coverImg.delete()
+            post.save()
+            return JsonResponse({'status': "success", 'message': "delete coverImg success"})
+        except Exception as e:
+            return JsonResponse({'status': "fail", 'message': str(e)})
 
 class PostLikeView(generics.GenericAPIView):
     """

@@ -52,6 +52,28 @@ class PostsActionPermission(permissions.BasePermission):
         return False
 
 
+class PostCoverImgPermission(permissions.BasePermission):
+    """
+    Global permission check for post coverImg
+    """
+    def has_permission(self, request, view):
+        if request.method in permissions.SAFE_METHODS:
+            return True
+
+        if request.user.is_superuser:
+            return True
+
+        if "admin" in request.user.groups.values_list('name', flat=True):
+            return True
+
+        if request.user == view.get_object().author:
+            return True
+
+        return False
+
+
+
+
 class PlateActionPermission(permissions.BasePermission):
     """
     Global permission check for plate action
