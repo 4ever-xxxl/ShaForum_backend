@@ -38,6 +38,8 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
 
+    "corsheaders",  # 跨域
+
     "users.apps.UsersConfig",  # 用户
     "comments.apps.CommentsConfig",  # 评论
     'posts.apps.PostsConfig',  # 帖子
@@ -48,6 +50,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",  # 跨域
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -236,3 +239,11 @@ LOGGING = {
         },
     }
 }
+
+
+# 跨域配置
+CORS_ALLOW_CREDENTIALS = True
+CORS_ORIGIN_ALLOW_ALL = True
+CORS_ORIGIN_WHITELIST = [
+    'http://' + ALLOWED_HOSTS[0] + ':8000',
+]
