@@ -13,6 +13,9 @@ from posts.serializers import PostsListSerializer, PostsDetailSerializer, PlateL
     PostCreateSerializer, PlateDescSerializer, PlateCreateSerializer, ManagePlateListSerializer, \
     ManagePlateCreateSerializer, ManagePlateActionSerializer, PostCoverImgSerializer
 from comments.serializers import CommentCreateSerializer, CommentDetailSerializer, CommentListSerializer
+import logging
+
+logger = logging.getLogger('django')
 
 
 def index(request):

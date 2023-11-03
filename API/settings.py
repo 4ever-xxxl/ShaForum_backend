@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 import datetime
 import os.path
+import logging
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -157,3 +158,81 @@ SIMPLE_JWT = {
 # 上传文件的路径
 MEDIA_URL = '/api/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# 上传文件的大小限制
+DATA_UPLOAD_MAX_MEMORY_SIZE = 10485760  # 10MB
+FILE_UPLOAD_MAX_MEMORY_SIZE = 10485760  # 10MB
+
+# 上传文件的类型限制
+FILE_UPLOAD_ALLOWED_TYPES = [
+    'image/jpeg',
+    'image/png',
+    'image/jpg',
+    'image/gif',
+    'image/bmp',
+    'image/webp',
+    'video/mp4',
+    'video/ogg',
+    'video/webm',
+    'audio/mpeg',
+    'audio/ogg',
+    'audio/wav',
+    'audio/webm',
+    'application/pdf',
+    'application/msword',
+    'application/vnd.ms-excel',
+    'application/vnd.ms-powerpoint',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+]
+
+
+# 日志配置
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        # 定义输出格式
+        'standard': {
+            'format': '[%(asctime)s] [%(levelname)s] [%(name)s:%(lineno)d] [%(module)s:%(funcName)s] %(message)s'
+        },
+        'simple': {
+            'format': '[%(asctime)s] [%(levelname)s] %(message)s'
+        },
+    },
+    'filters': {
+        # 过滤器
+        'require_debug_true': {
+            '()': 'django.utils.log.RequireDebugTrue',
+        },
+    },
+    'handlers': {
+        # 定义处理器
+        'console': {
+            'level': 'DEBUG',
+            'filters': ['require_debug_true'],
+            'class': 'logging.StreamHandler',  # 输出到控制台
+            'formatter': 'simple'
+        },
+        'file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',  # 输出到文件
+            'filename': os.path.join(BASE_DIR, 'logs', 'debug.log'),
+            'formatter': 'standard'
+        },
+        'mail_admins': {
+            'level': 'ERROR',
+            'filters': [],
+            'class': 'django.utils.log.AdminEmailHandler',  # 发送邮件
+            'include_html': True,
+        }
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['file'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+    }
+}

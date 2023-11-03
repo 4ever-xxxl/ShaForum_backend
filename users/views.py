@@ -6,7 +6,9 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from users.permissions import UserProfilePermission, UserAvatarPermission
 from users.serializers import UserRegisterSerializer, UserProfileSerializer, UserAvatarSerializer
 from users.models import User
+import logging
 
+logger = logging.getLogger('django')
 
 class UserRegisterView(generics.CreateAPIView):
     permission_classes = [permissions.AllowAny]

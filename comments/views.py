@@ -9,6 +9,9 @@ from API.CustomPagination import CustomPagination
 from comments.models import Comment, LikeUserComment, CollectUserComment
 from comments.serializers import CommentListSerializer, CommentCreateSerializer, CommentDetailSerializer
 from comments.permissions import CommentActionPermission
+import logging
+
+logger = logging.getLogger('django')
 
 
 # Create your views here.
