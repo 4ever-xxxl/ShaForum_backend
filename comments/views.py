@@ -5,7 +5,7 @@ from rest_framework.generics import ListAPIView, CreateAPIView, RetrieveAPIView,
     GenericAPIView
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 
-from CustomPagination import CustomPagination
+from API.CustomPagination import CustomPagination
 from comments.models import Comment, LikeUserComment, CollectUserComment
 from comments.serializers import CommentListSerializer, CommentCreateSerializer, CommentDetailSerializer
 from comments.permissions import CommentActionPermission

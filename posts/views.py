@@ -4,7 +4,7 @@ from django.http import HttpResponse, JsonResponse
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics
 
-from CustomPagination import CustomPagination
+from API.CustomPagination import CustomPagination
 from comments.models import Comment
 from posts.models import Post, Plate, LikeUserPost, CollectUserPost, ManagePlate
 from posts.permissions import PostsActionPermission, PlateActionPermission, ManagePlateActionPermission, \

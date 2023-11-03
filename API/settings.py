@@ -25,7 +25,7 @@ SECRET_KEY = "django-insecure-#f*1uytq7$&8+5o%qs@5)3&3=(q_os*o)gq+!kd3kt=)t5hky3
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*"] # 部署时改为本地IP
 
 # Application definition
 
@@ -81,8 +81,8 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'ShaForum',
-        'USER': 'root',
-        'PASSWORD': 'password',
+        'USER': 'shaforum',
+        'PASSWORD': 'shaforum',
         'HOST': 'localhost',
         'PORT': '3306',
     }
@@ -105,7 +105,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = "zh-hans"
 
-TIME_ZONE = "asia/shanghai"
+TIME_ZONE = 'Asia/Shanghai'
 
 USE_I18N = True
 

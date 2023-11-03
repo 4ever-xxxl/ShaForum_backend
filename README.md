@@ -35,4 +35,4 @@
 创建超级管理员    | python manage.py createsuperuser   
 创建数据库表      | python manage.py makemigrations
 应用数据库表      | python manage.py migrate
-启动项目         | python manage.py runserver
+启动项目         | python manage.py runserver 0.0.0.0:8000

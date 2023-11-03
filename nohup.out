@@ -1,0 +1,8 @@
+Watching for file changes with StatReloader
+Not Found: /
+[03/Nov/2023 12:23:53] "GET / HTTP/1.1" 404 2503
+[03/Nov/2023 12:28:31] "GET /api/ HTTP/1.1" 200 48
+Not Found: /
+[03/Nov/2023 12:29:37] "GET / HTTP/1.1" 404 2503
+Not Found: /favicon.ico
+[03/Nov/2023 12:29:37] "GET /favicon.ico HTTP/1.1" 404 2554

@@ -2,7 +2,7 @@ from django.conf.urls.static import static
 from django.urls import path
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView, TokenBlacklistView, TokenVerifyView
 
-import settings
+from API import settings
 from . import views
 
 app_name = 'users'
