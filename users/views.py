@@ -11,6 +11,30 @@ import logging
 logger = logging.getLogger('django')
 
 class UserRegisterView(generics.CreateAPIView):
+    """
+    User register view
+    
+    Prameters:
+        username: str (required)
+        email: str (required)
+        password: str (required)
+
+    Return:
+        status: str (success or failed)
+        message: str (error message)
+    
+    Return example:
+        {
+            "status": "success"
+        }
+    
+    Raises:
+        ValidationError: if username or email or password is invalid
+        Exception: if username or email is already existed
+
+    Permission:
+        AllowAny
+    """
     permission_classes = [permissions.AllowAny]
     serializer_class = UserRegisterSerializer
 
@@ -28,6 +52,23 @@ class UserRegisterView(generics.CreateAPIView):
 
 
 class UserLoginView(generics.GenericAPIView):
+    """
+    User login view
+    
+    Prameters:
+        username: str (required)
+        password: str (required)
+
+    Return:
+        status: str (success or failed)
+        message: str (error message)
+        access_token: str (JWT access token)
+        refresh_token: str (JWT refresh token)
+        user_info: dict (user profile)
+    
+    Permission:
+        AllowAny
+    """
     permission_classes = [permissions.AllowAny]
     serializer_class = UserProfileSerializer
 
@@ -54,7 +95,19 @@ class UserLoginView(generics.GenericAPIView):
 
 
 class UserLogoutView(generics.GenericAPIView):
+    """
+    User logout view
 
+    Prameters:
+        None
+
+    Return:
+        status: str (success or failed)
+        message: str (error message)
+    
+    Permission:
+        IsAuthenticated
+    """
     def post(self, request, *args, **kwargs):
         try:
             logout(request)
@@ -64,6 +117,12 @@ class UserLogoutView(generics.GenericAPIView):
 
 
 class UserProfileView(generics.GenericAPIView):
+    """
+    User profile view
+
+    Prameters:
+        pk: int (required) (0 for current user)
+    """
     permission_classes = [UserProfilePermission]
     serializer_class = UserProfileSerializer
 
@@ -73,6 +132,13 @@ class UserProfileView(generics.GenericAPIView):
         return User.objects.get(userID=self.kwargs['pk'])
 
     def get(self, request, *args, **kwargs):
+        """
+        basic info get
+
+        Return:
+            status: str (success or failed)
+            user_info: dict (user profile)
+        """
         try:
             user_info = UserProfileSerializer(self.get_object()).data
             return JsonResponse({'status': 'success', 'user_info': user_info})
@@ -80,6 +146,28 @@ class UserProfileView(generics.GenericAPIView):
             return JsonResponse({'status': 'failed', 'message': str(e)})
 
     def post(self, request, *args, **kwargs):
+        """
+        basic info update for admin
+
+        Prameters:
+            password: str
+            is_active: bool
+            sex: str
+            avatar: file
+            status: str
+            stuID: str
+            college: str
+            major: str
+            birth_date: str
+            address: str
+            phone: str
+            groups: list
+
+        Return:
+            status: str (success or failed)
+            user_info: dict (user profile)
+            message: str (error message)
+        """
         try:
             queryset = self.get_object()
             serializer = UserProfileSerializer(queryset, request.data, partial=True)
@@ -94,6 +182,25 @@ class UserProfileView(generics.GenericAPIView):
             return JsonResponse({'status': 'failed', 'message': str(e)})
 
     def patch(self, request, *args, **kwargs):
+        """
+        basic info update for user
+
+        Prameters:
+            sex: str
+            avatar: file
+            status: str
+            stuID: str
+            college: str
+            major: str
+            birth_date: str
+            address: str
+            phone: str
+        
+        Return:
+            status: str (success or failed)
+            user_info: dict (user profile)
+            message: str (error message)
+        """
         try:
             queryset = self.get_object()
             read_only_fields = ('groups', 'is_active')
@@ -109,6 +216,16 @@ class UserProfileView(generics.GenericAPIView):
             return JsonResponse({'status': 'failed', 'message': str(e)})
 
     def delete(self, request, *args, **kwargs):
+        """
+        user delete
+
+        Prameters:
+            None
+
+        Return:
+            status: str (success or failed)
+            message: str (error message)
+        """
         try:
             self.get_object().delete()
             return JsonResponse({'status': 'success'})
@@ -117,6 +234,16 @@ class UserProfileView(generics.GenericAPIView):
 
 
 class UserListView(generics.ListAPIView):
+    """
+    User list view
+    
+    Prameters:
+        None
+
+    Return:
+        status: str (success or failed)
+        user_list: list (user profile list)
+    """
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     serializer_class = UserProfileSerializer
     queryset = User.objects.all()
@@ -132,6 +259,17 @@ class UserListView(generics.ListAPIView):
 
 
 class UserPasswordChangeView(generics.GenericAPIView):
+    """
+    User password change view
+    
+    Prameters:
+        old_password: str (required)
+        new_password: str (required)
+        
+    Return:
+        status: str (success or failed)
+        message: str (error message)
+    """
     def post(self, request, *args, **kwargs):
         try:
             old_password = request.data.get('old_password')
@@ -148,20 +286,47 @@ class UserPasswordChangeView(generics.GenericAPIView):
 
 
 class UserAvatarView(generics.GenericAPIView):
+    """
+    User avatar view
+
+    Prameters:
+        pk: int (required) (0 for current user)
+    """
     permission_classes = [UserAvatarPermission]
     serializer_class = UserAvatarSerializer
 
     def get_object(self):
+        if self.kwargs['pk'] == 0:
+            return self.request.user
         return User.objects.get(userID=self.kwargs['pk'])
 
     def get(self, request, *args, **kwargs):
+        """
+        avatar get
+        
+        Return:
+            status: str (success or failed)
+            user_info: dict (userID, avatar)
+            message: str (error message)
+        """
         try:
             user_info = UserAvatarSerializer(self.get_object()).data
-            return JsonResponse({'status': 'success', 'user': user_info})
+            return JsonResponse({'status': 'success', 'user_info': user_info})
         except Exception as e:
             return JsonResponse({'status': 'failed', 'message': str(e)})
 
     def post(self, request, *args, **kwargs):
+        """
+        avatar update
+
+        Prameters:
+            avatar: file (required)
+
+        Return:
+            status: str (success or failed)
+            user_info: dict (userID, avatar)
+            message: str (error message)
+        """
         try:
             tmpUser = self.get_object()
             serializer = self.serializer_class(tmpUser, request.data, partial=True)
@@ -174,6 +339,13 @@ class UserAvatarView(generics.GenericAPIView):
             return JsonResponse({'status': 'failed', 'message': str(e)})
 
     def delete(self, request, *args, **kwargs):
+        """
+        avatar delete
+        
+        Return:
+            status: str (success or failed)
+            message: str (error message)
+        """
         try:
             tmpUser = self.get_object()
             tmpUser.avatar.delete()
