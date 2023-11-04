@@ -6,6 +6,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from users.permissions import UserProfilePermission, UserAvatarPermission
 from users.serializers import UserRegisterSerializer, UserProfileSerializer, UserAvatarSerializer
 from users.models import User
+from API.CustomPagination import CustomPagination
 import logging
 
 logger = logging.getLogger('django')
@@ -238,22 +239,26 @@ class UserListView(generics.ListAPIView):
     User list view
     
     Prameters:
-        None
+        page_size: int (optional) (default: 10)
+        page: int (optional) (default: 1)
 
     Return:
-        status: str (success or failed)
-        user_list: list (user profile list)
+        pageinated_response: dict (user profile list)
     """
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     serializer_class = UserProfileSerializer
     queryset = User.objects.all()
+    pagination_class = CustomPagination
 
     def get(self, request, *args, **kwargs):
         try:
             queryset = self.get_queryset()
-            serializer = UserProfileSerializer(queryset, many=True)
-            user_list = serializer.data
-            return JsonResponse({'status': 'success', 'user_list': user_list})
+            page = self.paginate_queryset(queryset)
+            if page is not None:
+                serializer = UserProfileSerializer(page, many=True)
+                return self.get_paginated_response(serializer.data)
+            else:
+                raise Exception('page is None')
         except Exception as e:
             return JsonResponse({'status': 'failed', 'message': str(e)})
 
