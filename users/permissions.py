@@ -17,7 +17,7 @@ class UserProfilePermission(BasePermission):
             return True
 
         if request.method == 'POST':
-            return request.uesr.has_perm('users.change_user')
+            return request.user.has_perm('users.change_user')
 
         # 用户修改或删除自己的信息
         if request.method == 'PATCH' or request.method == 'DELETE':
