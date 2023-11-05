@@ -125,6 +125,13 @@ class PostsDetailSerializer(serializers.ModelSerializer):
 
     def get_toc_html(self, obj):
         return obj.get_md()[1]
+    
+    def validated_plate_id(self, value):
+        try:
+            plate = Plate.objects.get(plateID=value)
+            return plate
+        except Plate.DoesNotExist:
+            raise serializers.ValidationError("Plate does not exist")
 
 
 class PostCoverImgSerializer(serializers.ModelSerializer):
