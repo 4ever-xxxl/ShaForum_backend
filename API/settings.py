@@ -247,3 +247,7 @@ CORS_ORIGIN_ALLOW_ALL = True
 CORS_ORIGIN_WHITELIST = [
     'http://' + ALLOWED_HOSTS[0] + ':8000',
 ]
+CORS_ALLOW_HEADERS = [
+    'Content-Type',
+    'Authorization',  # 添加 Authorization 到允许的请求头字段
+]
