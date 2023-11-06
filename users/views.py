@@ -86,7 +86,7 @@ class UserLoginView(generics.GenericAPIView):
                 access_token = str(refresh_token.access_token)
                 expired_time = refresh_token['exp']
                 refresh_token = str(refresh_token)
-                serializers = UserProfileSerializer(user)
+                serializers = UserProfileSerializer(user, context={'request': request})
                 user_info = serializers.data
                 return JsonResponse({'status': 'success', 'access_token': access_token, 'refresh_token': refresh_token,
                                      'user_info': user_info})
@@ -181,7 +181,7 @@ class UserProfileView(generics.GenericAPIView):
             user_info: dict (user profile)
         """
         try:
-            user_info = UserProfileSerializer(self.get_object()).data
+            user_info = self.serializer_class(self.get_object(), context={'request': request}).data
             return JsonResponse({'status': 'success', 'user_info': user_info})
         except Exception as e:
             return JsonResponse({'status': 'failed', 'message': str(e)})
@@ -211,7 +211,7 @@ class UserProfileView(generics.GenericAPIView):
         """
         try:
             queryset = self.get_object()
-            serializer = UserProfileSerializer(queryset, request.data, partial=True)
+            serializer = self.serializer_class(queryset, request.data, partial=True, context={'request': request})
             serializer.is_valid(raise_exception=True)
             serializer.update(queryset, serializer.validated_data)
             if 'password' in request.data:
@@ -248,7 +248,7 @@ class UserProfileView(generics.GenericAPIView):
             for item in read_only_fields:
                 if item in request.data:
                     raise Exception('read only field cannot be changed')
-            serializer = UserProfileSerializer(queryset, request.data, partial=True)
+            serializer = self.serializer_class(queryset, request.data, partial=True, context={'request': request})
             serializer.is_valid(raise_exception=True)
             serializer.update(queryset, serializer.validated_data)
             user_info = serializer.data
@@ -295,7 +295,7 @@ class UserListView(generics.ListAPIView):
             queryset = self.get_queryset()
             page = self.paginate_queryset(queryset)
             if page is not None:
-                serializer = UserProfileSerializer(page, many=True)
+                serializer = UserProfileSerializer(page, many=True, context={'request': request})
                 return self.get_paginated_response(serializer.data)
             else:
                 raise Exception('page is None')
@@ -355,7 +355,7 @@ class UserAvatarView(generics.GenericAPIView):
             message: str (error message)
         """
         try:
-            user_info = UserAvatarSerializer(self.get_object()).data
+            user_info = UserAvatarSerializer(self.get_object(), context={'request': request}).data
             return JsonResponse({'status': 'success', 'user_info': user_info})
         except Exception as e:
             return JsonResponse({'status': 'failed', 'message': str(e)})
