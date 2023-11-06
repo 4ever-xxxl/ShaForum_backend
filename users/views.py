@@ -84,6 +84,7 @@ class UserLoginView(generics.GenericAPIView):
                 login(request, user)
                 refresh_token = RefreshToken.for_user(user)
                 access_token = str(refresh_token.access_token)
+                expired_time = refresh_token['exp']
                 refresh_token = str(refresh_token)
                 serializers = UserProfileSerializer(user)
                 user_info = serializers.data
@@ -109,6 +110,8 @@ class UserReLoginView(generics.GenericAPIView):
         refresh_token: str (JWT refresh token)
         user_info: dict (user profile)
     """
+    permission_classes = [permissions.AllowAny]
+    serializer_class = UserProfileSerializer
 
     def post(self, request, *args, **kwargs):
         try:
@@ -122,7 +125,7 @@ class UserReLoginView(generics.GenericAPIView):
                 refresh_token = RefreshToken.for_user(user)
                 access_token = str(refresh_token.access_token)
                 refresh_token = str(refresh_token)
-                serializers = UserProfileSerializer(user)
+                serializers = self.serializer_class(user)
                 user_info = serializers.data
                 return JsonResponse({'status': 'success', 'access_token': access_token, 'refresh_token': refresh_token,
                                      'user_info': user_info})

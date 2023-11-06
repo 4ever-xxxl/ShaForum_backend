@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from taggit.serializers import TagListSerializerField
 
+import random
 from users.models import User
 from posts.models import Post, Plate, ManagePlate
 from users.serializers import UserDescSerializer, UserBriefSerializer
@@ -138,6 +139,17 @@ class PostCoverImgSerializer(serializers.ModelSerializer):
     class Meta:
         model = Post
         fields = ('postID', 'coverImg',)
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        cover_img = representation.get('coverImg')
+
+        if cover_img is None:
+            default_img_number = random.randint(1, 9)  # 随机选择1到10之间的一个数字
+            default_img_path = f'/api/media/covers/default-{default_img_number}.jpg'  # 假设默认图片的路径为"default-i.jpg"
+            representation['coverImg'] = default_img_path
+
+        return representation
 
 
 # endregion

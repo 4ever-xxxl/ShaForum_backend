@@ -7,7 +7,7 @@ from rest_framework.permissions import IsAuthenticatedOrReadOnly
 
 from API.CustomPagination import CustomPagination
 from comments.models import Comment, LikeUserComment, CollectUserComment
-from comments.serializers import CommentListSerializer, CommentCreateSerializer, CommentDetailSerializer
+from comments.serializers import CommentListSerializer, CommentCreateSerializer, CommentDetailSerializer, CommentActionSerializer
 from comments.permissions import CommentActionPermission
 import logging
 
@@ -98,7 +98,7 @@ class CommentActionView(RetrieveUpdateDestroyAPIView):
     Retrieve, update or delete a comment
     """
     queryset = Comment.objects.all()
-    serializer_class = CommentDetailSerializer
+    serializer_class = CommentActionSerializer
     permission_classes = [CommentActionPermission]
 
     def get(self, request, *args, **kwargs):
