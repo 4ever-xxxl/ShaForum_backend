@@ -22,5 +22,10 @@ urlpatterns = [
     path("user/list/", views.UserListView.as_view(), name="userlist"),
     path("user/avatar/<int:pk>/", views.UserAvatarView.as_view(), name="avatar"),
     path("password/change/", views.UserPasswordChangeView.as_view(), name="password_change"),
+
+    path("notification/list/", views.NotificationListView.as_view(), name="notification_list"),
+    path("notification/<int:pk>/", views.NotificationDetailView.as_view(), name="notification_detail"),
+    path("notification/read/<int:pk>/", views.NotificationReadView.as_view(), name="notification_read"),
+    path("notification/allread/", views.NotificationAllReadView.as_view(), name="notification_allread"),
 ]
 

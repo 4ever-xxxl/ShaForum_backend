@@ -1,7 +1,12 @@
-from rest_framework import serializers, permissions
+from rest_framework import serializers
+from notifications.models import Notification
 
 from users.models import User
-
+from posts.models import Post, Plate
+from comments.models import Comment
+from users.descSerializers import UserBriefSerializer
+from posts.descSerializers import PostDescSerializer, PlateDescSerializer
+from comments.descSerializers import CommentDescSerializer
 
 class UserRegisterSerializer(serializers.ModelSerializer):
     """
@@ -48,23 +53,35 @@ class UserAvatarSerializer(serializers.ModelSerializer):
         fields = ('userID', 'avatar')
 
 
-class UserDescSerializer(serializers.ModelSerializer):
-    """
-    User serializer for user description in other models
-    """
+class NotificationSerializer(serializers.ModelSerializer):
+    actor = serializers.SerializerMethodField()
+    target = serializers.SerializerMethodField()
+    action_object = serializers.SerializerMethodField()
 
     class Meta:
-        model = User
-        fields = ('userID', 'username', 'status', 'avatar')
-        read_only_fields = ('userID', 'username', 'status', 'avatar')
-
-
-class UserBriefSerializer(serializers.ModelSerializer):
-    """
-    User serializer for user description in other models
-    """
-
-    class Meta:
-        model = User
-        fields = ('userID', 'username')
-        read_only_fields = ('userID', 'username')
+        model = Notification
+        fields = ['id', 'actor', 'verb', 'description', 'target', "action_object", 'level', 'unread', 'timestamp']
+        # fields = '__all__'
+        ordering = ['-unread', '-timestamp'] # 未读的在前面，按时间倒序排列
+        
+    def get_actor(self, obj):
+        actor_object_id = str(obj.actor_object_id)
+        return UserBriefSerializer(User.objects.get(userID=actor_object_id)).data
+    
+    def get_target(self, obj):
+        target_object_id = str(obj.target_object_id)
+        if obj.verb in ['newPost', 'updatePost', 'deletePost', 'likePost', 'collectPost', 'commentPost']:
+            return PostDescSerializer(Post.objects.get(postID=target_object_id)).data
+        if obj.verb in ['moderator', 'removeModerator']:
+            return PlateDescSerializer(Plate.objects.get(plateID=target_object_id)).data
+        if obj.verb in ['replyComment', 'likeComment', 'collectComment']:
+            return CommentDescSerializer(Comment.objects.get(commentID=target_object_id)).data
+        return None
+    
+    def get_action_object(self, obj):
+        action_object_object_id = str(obj.action_object_object_id)
+        if obj.verb in ['commentPost', 'replyComment']:
+            return CommentDescSerializer(Comment.objects.get(commentID=action_object_object_id)).data
+        if obj.verb in ['likeComment', 'collectComment']:
+            return PostDescSerializer(Post.objects.get(postID=action_object_object_id)).data
+        return None

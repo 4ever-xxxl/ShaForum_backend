@@ -3,7 +3,7 @@ from django.db.models import Q
 from django.http import HttpResponse, JsonResponse
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics
-
+from notifications.signals import notify
 from API.CustomPagination import CustomPagination
 from comments.models import Comment
 from posts.models import Post, Plate, LikeUserPost, CollectUserPost, ManagePlate
@@ -19,12 +19,14 @@ from posts.serializers import (
     PlateListSerializer,
     PlateDetailSerializer,
     PostCreateSerializer,
-    PlateDescSerializer,
     PlateCreateSerializer,
-    ManagePlateListSerializer,
     ManagePlateCreateSerializer,
     ManagePlateActionSerializer,
     PostCoverImgSerializer,
+)
+from posts.descSerializers import (
+    PlateDescSerializer,
+    ManagePlateListSerializer,
 )
 from comments.serializers import (
     CommentCreateSerializer,
@@ -149,6 +151,17 @@ class PostCreateView(generics.CreateAPIView):
             serializer.is_valid(raise_exception=True)
             serializer.save()
             new_post = Post.objects.get(postID=serializer.data["postID"])
+            # 通知板主
+            manage_plates = ManagePlate.objects.filter(plate=new_post.plate)
+            for manage_plate in manage_plates:
+                moderator = manage_plate.moderator
+                notify.send(
+                    sender=request.user,
+                    recipient=moderator,
+                    verb='newPost',
+                    description='发布了新的帖子',
+                    target=new_post,
+                )
             return JsonResponse(
                 {"status": "success", "post": PostsDetailSerializer(new_post).data}
             )
@@ -183,6 +196,14 @@ class PostActionView(generics.RetrieveUpdateDestroyAPIView):
             serializer = self.get_serializer(post, data=request.data, partial=True)
             serializer.is_valid(raise_exception=True)
             serializer.save()
+            # 通知板主
+            notify.send(
+                sender=request.user,
+                recipient=post.plate.moderator,
+                verb="updatePost",
+                description="更新了帖子",
+                target=post,
+            )
             return JsonResponse({"status": "success", "post": serializer.data})
         except Exception as e:
             return JsonResponse({"status": "fail", "message": str(e)})
@@ -190,6 +211,14 @@ class PostActionView(generics.RetrieveUpdateDestroyAPIView):
     def delete(self, request, *args, **kwargs):
         try:
             post = self.get_object()
+            if request.user != post.author:
+                notify.send(
+                    sender=request.user,
+                    recipient=post.author,
+                    verb="deletePost",
+                    description="删除了你的帖子",
+                    target=post,
+                )
             post.delete()
             return JsonResponse({"status": "success", "message": "delete success"})
         except Exception as e:
@@ -254,6 +283,13 @@ class PostLikeView(generics.GenericAPIView):
                 user=request.user, post=post
             )
             if created:
+                notify.send(
+                    sender=request.user,
+                    recipient=post.author,
+                    verb="likePost",
+                    description="点赞了你的帖子",
+                    target=post,
+                )
                 return JsonResponse({"status": "success", "message": "like success"})
             else:
                 return JsonResponse({"status": "success", "message": "already liked"})
@@ -285,6 +321,13 @@ class PostCollectView(generics.GenericAPIView):
                 user=request.user, post=post
             )
             if created:
+                notify.send(
+                    sender=request.user,
+                    recipient=post.author,
+                    verb="collectPost",
+                    description="收藏了你的帖子",
+                    target=post,
+                )
                 return JsonResponse({"status": "success", "message": "collect success"})
             else:
                 return JsonResponse(
@@ -306,6 +349,7 @@ class PostCollectView(generics.GenericAPIView):
 
 
 # endregion
+
 
 # region Comment
 
@@ -330,6 +374,15 @@ class PostCommentView(generics.GenericAPIView):
             serializer.is_valid(raise_exception=True)
             serializer.save()
             new_comment = Comment.objects.get(commentID=serializer.data["commentID"])
+            # 通知帖子作者
+            notify.send(
+                sender=request.user,
+                recipient=new_comment.post.author,
+                verb="commentPost",
+                description="评论了你的帖子",
+                action_object=new_comment,
+                target=new_comment.post,
+            )
             return JsonResponse(
                 {
                     "status": "success",
@@ -467,6 +520,7 @@ class PlateActionView(generics.RetrieveUpdateDestroyAPIView):
 
 # endregion
 
+
 # region ManagePlate
 
 
@@ -525,6 +579,14 @@ class ManagePlateCreateView(generics.CreateAPIView):
             if user.managePlates.count() == 1:  # 如果用户原来没有管理的板块, 则将其加入moderator组
                 group = Group.objects.get(name="moderator")
                 user.groups.add(group)
+            # 通知被任命的用户
+            notify.send(
+                sender=request.user,
+                recipient=new_manage.moderator,
+                verb="moderator",
+                description="成为了板主",
+                target=new_manage.plate,
+            )
             return JsonResponse(
                 {
                     "status": "success",
@@ -559,6 +621,14 @@ class ManagePlateActionView(generics.RetrieveDestroyAPIView):
             if user.managePlates.count() == 0:  # 如果删除后用户没有管理的板块了, 则将其从moderator组中移除
                 group = Group.objects.get(name="moderator")
                 user.groups.remove(group)
+            # 通知被撤销的用户
+            notify.send(
+                sender=request.user,
+                recipient=user,
+                verb="removeModerator",
+                description="被撤销了板主",
+                target=manage_plate.plate,
+            )
             return JsonResponse({"status": "success", "message": "delete success"})
         except Exception as e:
             return JsonResponse({"status": "fail", "message": str(e)})

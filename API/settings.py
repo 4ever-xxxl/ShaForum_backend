@@ -11,7 +11,6 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 import datetime
 import os.path
-import logging
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -47,6 +46,7 @@ INSTALLED_APPS = [
     "rest_framework.authtoken",  # token
     "taggit",  # 标签
     "mptt",  # 多级评论
+    "notifications",  # 通知
 ]
 
 MIDDLEWARE = [
@@ -137,7 +137,7 @@ REST_FRAMEWORK = {
 }
 
 # 设置登录检查的URL
-LOGIN_URL = '/api/token/'
+LOGIN_URL = '/api/login/'
 
 # SMTP服务器，改为你的邮箱的smtp!
 EMAIL_HOST = 'smtp.yandex.com'

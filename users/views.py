@@ -4,7 +4,7 @@ from rest_framework import generics, permissions
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from users.permissions import UserProfilePermission, UserAvatarPermission
-from users.serializers import UserRegisterSerializer, UserProfileSerializer, UserAvatarSerializer
+from users.serializers import UserRegisterSerializer, UserProfileSerializer, UserAvatarSerializer, NotificationSerializer
 from users.models import User
 from API.CustomPagination import CustomPagination
 import logging
@@ -396,5 +396,129 @@ class UserAvatarView(generics.GenericAPIView):
             tmpUser.avatar.delete()
             tmpUser.save()
             return JsonResponse({'status': 'success', 'message': 'avatar deleted'})
+        except Exception as e:
+            return JsonResponse({'status': 'failed', 'message': str(e)})
+
+
+class NotificationListView(generics.ListAPIView):
+    """
+    Notification list view
+    
+    Prameters:
+        page_size: int (optional) (default: 10)
+        page: int (optional) (default: 1)
+
+    Return:
+        pageinated_response: dict (notification list)
+    """
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = NotificationSerializer
+    pagination_class = CustomPagination
+
+    def get_queryset(self):
+        return self.request.user.notifications.all()
+
+    def get(self, request, *args, **kwargs):
+        try:
+            queryset = self.get_queryset()
+            page = self.paginate_queryset(queryset)
+            if page is not None:
+                serializer = NotificationSerializer(page, many=True)
+                return self.get_paginated_response(serializer.data)
+            else:
+                raise Exception('page is None')
+        except Exception as e:
+            return JsonResponse({'status': 'failed', 'message': str(e)})
+
+
+class NotificationDetailView(generics.GenericAPIView):
+    """
+    Notification detail view
+    
+    Prameters:
+        pk: int (required) (notification id)
+    
+    Return:
+        status: str (success or failed)
+        notification_info: dict (notification detail)
+        message: str (error message)
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = NotificationSerializer
+
+    def get_object(self):
+        return self.request.user.notifications.get(id=self.kwargs['pk'])
+    
+    def get(self, request, *args, **kwargs):
+        try:
+            notification = self.get_object(raise_exception=True)
+            notification_info = NotificationSerializer(notification).data
+            return JsonResponse({'status': 'success', 'notification_info': notification_info})
+        except Exception as e:
+            return JsonResponse({'status': 'failed', 'message': str(e)})
+        
+
+class NotificationReadView(generics.GenericAPIView):
+    """
+    Notification read/unread view
+    
+    Prameters:
+        pk: int (required) (notification id)
+        
+    Return:
+        status: str (success or failed)
+        message: str (error message)
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = NotificationSerializer
+
+    def get_object(self):
+        return self.request.user.notifications.get(id=self.kwargs['pk'])
+    
+    def post(self, request, *args, **kwargs):
+        try:
+            notification = self.get_object(raise_exception=True)
+            notification.mark_as_read()
+            return JsonResponse({'status': 'success'})
+        except Exception as e:
+            return JsonResponse({'status': 'failed', 'message': str(e)})
+        
+    def delete(self, request, *args, **kwargs):
+        try:
+            notification = self.get_object(raise_exception=True)
+            notification.mark_as_unread()
+            return JsonResponse({'status': 'success'})
+        except Exception as e:
+            return JsonResponse({'status': 'failed', 'message': str(e)})
+        
+
+class NotificationAllReadView(generics.GenericAPIView):
+    """
+    Notification all read view
+    
+    Prameters:
+        None
+        
+    Return:
+        status: str (success or failed)
+        message: str (error message)
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = NotificationSerializer
+
+    def post(self, request, *args, **kwargs):
+        try:
+            request.user.notifications.mark_all_as_read()
+            return JsonResponse({'status': 'success'})
+        except Exception as e:
+            return JsonResponse({'status': 'failed', 'message': str(e)})
+        
+    def delete(self, request, *args, **kwargs):
+        try:
+            request.user.notifications.mark_all_as_unread()
+            return JsonResponse({'status': 'success'})
         except Exception as e:
             return JsonResponse({'status': 'failed', 'message': str(e)})

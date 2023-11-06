@@ -24,14 +24,6 @@ class CommentSerializer(serializers.ModelSerializer):
         return obj.childComments.count()
 
 
-class CommentDescSerializer(CommentSerializer):
-    class Meta:
-        model = Comment
-        fields = ('commentID', 'content', 'author', 'post', 'created', 'last_modified', 'parent', 'reply_to',
-                  'like_count', 'collect_count', 'reply_count')
-        read_only_fields = ("__all__",)
-
-
 class CommentCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Comment

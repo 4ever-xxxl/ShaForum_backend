@@ -1,53 +1,14 @@
 from rest_framework import serializers
 from taggit.serializers import TagListSerializerField
-
 import random
-from users.models import User
-from posts.models import Post, Plate, ManagePlate
-from users.serializers import UserDescSerializer, UserBriefSerializer
 from PIL import Image
 from io import BytesIO
 from django.core.files.uploadedfile import InMemoryUploadedFile
+from users.models import User
+from posts.models import Post, Plate, ManagePlate
+from users.descSerializers import UserDescSerializer
+from posts.descSerializers import UserDescSerializer, PlateDescSerializer, ManagePlateDescSerializer
 import sys
-
-# region Description
-
-class PlateDescSerializer(serializers.ModelSerializer):
-    """
-    Plate serializer for plate description in posts
-    """
-
-    class Meta:
-        model = Plate
-        fields = ('plateID', "name")
-
-
-class ManagePlateDescSerializer(serializers.ModelSerializer):
-    """
-    Plate serializer for plate description in posts
-    """
-    moderator = UserDescSerializer()
-
-    class Meta:
-        model = ManagePlate
-        fields = ('mpID', 'moderator', 'created')
-        read_only_fields = ("__all__",)
-
-
-class ManagePlateListSerializer(serializers.ModelSerializer):
-    """
-    Plate serializer for plate description in posts
-    """
-    moderator = UserBriefSerializer()
-    plate = PlateDescSerializer()
-
-    class Meta:
-        model = ManagePlate
-        fields = ('mpID', 'plate', 'moderator', 'created')
-        read_only_fields = ("__all__",)
-
-
-# endregion
 
 
 # region Post
@@ -156,7 +117,7 @@ class PostCoverImgSerializer(serializers.ModelSerializer):
     
 
     def save(self, **kwargs):
-        post = self.super().save(**kwargs)
+        post = super().save(**kwargs)
         
         # 对上传的图片进行压缩
         if post.coverImg:
