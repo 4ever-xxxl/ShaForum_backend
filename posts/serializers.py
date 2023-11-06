@@ -5,7 +5,10 @@ import random
 from users.models import User
 from posts.models import Post, Plate, ManagePlate
 from users.serializers import UserDescSerializer, UserBriefSerializer
-
+from PIL import Image
+from io import BytesIO
+from django.core.files.uploadedfile import InMemoryUploadedFile
+import sys
 
 # region Description
 
@@ -150,6 +153,21 @@ class PostCoverImgSerializer(serializers.ModelSerializer):
             representation['coverImg'] = default_img_path
 
         return representation
+    
+
+    def save(self, **kwargs):
+        post = self.super().save(**kwargs)
+        
+        # 对上传的图片进行压缩
+        if post.coverImg:
+            img = Image.open(post.coverImg)
+            output = BytesIO()
+            img.save(output, format='JPEG', quality=70)
+            output.seek(0)
+            post.coverImg = InMemoryUploadedFile(output, 'ImageField', "%s.jpg" % post.coverImg.name.split('.')[0],
+                                                'image/jpeg', sys.getsizeof(output), None)
+        post.save()
+        return post
 
 
 # endregion
