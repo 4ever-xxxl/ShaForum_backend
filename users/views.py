@@ -95,6 +95,43 @@ class UserLoginView(generics.GenericAPIView):
             return JsonResponse({'status': 'failed', 'message': str(e)})
 
 
+class UserReLoginView(generics.GenericAPIView):
+    """
+    User relogin view
+    
+    Prameters:
+        refresh_token: str (required) (JWT refresh token)
+    
+    Return:
+        status: str (success or failed)
+        message: str (error message)
+        access_token: str (JWT access token)
+        refresh_token: str (JWT refresh token)
+        user_info: dict (user profile)
+    """
+
+    def post(self, request, *args, **kwargs):
+        try:
+            refresh_token = request.data.get('refresh_token')
+            refresh_token = RefreshToken(refresh_token)
+            user = User.objects.get(userID=refresh_token['userID'])
+            if user is not None:
+                if not user.is_active:
+                    return JsonResponse({'status': 'failed', 'message': 'user is banned'})
+                login(request, user)
+                refresh_token = RefreshToken.for_user(user)
+                access_token = str(refresh_token.access_token)
+                refresh_token = str(refresh_token)
+                serializers = UserProfileSerializer(user)
+                user_info = serializers.data
+                return JsonResponse({'status': 'success', 'access_token': access_token, 'refresh_token': refresh_token,
+                                     'user_info': user_info})
+            else:
+                return JsonResponse({'status': 'failed', 'message': 'wrong refresh token'})
+        except Exception as e:
+            return JsonResponse({'status': 'failed', 'message': str(e)})
+
+
 class UserLogoutView(generics.GenericAPIView):
     """
     User logout view
