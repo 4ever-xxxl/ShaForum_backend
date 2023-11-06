@@ -55,7 +55,7 @@ class PostDetailView(generics.RetrieveAPIView):
         try:
             post = self.get_object()
             post.increase_views()
-            serializer = PostsDetailSerializer(post)
+            serializer = PostsDetailSerializer(post, context={"request": request})
             return JsonResponse({"status": "success", "post": serializer.data})
         except Exception as e:
             return JsonResponse({"status": "fail", "message": str(e)})

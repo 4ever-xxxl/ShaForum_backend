@@ -40,4 +40,7 @@ class UserAvatarPermission(BasePermission):
         if request.user.is_superuser:
             return True
 
-        return request.user == view.get_object()
+        if request.user == view.get_object():
+            return True
+        
+        return False
