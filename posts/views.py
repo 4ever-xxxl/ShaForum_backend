@@ -291,7 +291,7 @@ class PostCoverImgView(generics.GenericAPIView):
     def get(self, request, *args, **kwargs):
         try:
             post = self.get_object()
-            post_info = self.searliazer_class(post).data
+            post_info = self.searliazer_class(post, context={"request": request}).data
             return JsonResponse({"status": "success", "post": post_info})
         except Exception as e:
             return JsonResponse({"status": "fail", "message": str(e)})
@@ -299,7 +299,7 @@ class PostCoverImgView(generics.GenericAPIView):
     def post(self, request, *args, **kwargs):
         try:
             post = self.get_object()
-            serializer = self.searliazer_class(post, data=request.data)
+            serializer = self.searliazer_class(post, data=request.data, context={"request": request})
             serializer.is_valid(raise_exception=True)
             post.coverImg.delete()
             serializer.save()

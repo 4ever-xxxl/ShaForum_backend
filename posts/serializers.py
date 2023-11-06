@@ -37,7 +37,7 @@ class PostCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Plate does not exist")
 
 
-class PostsListSerializer(serializers.ModelSerializer):
+class PostBaseSerializer(serializers.ModelSerializer):
     tags = TagListSerializerField()
     plate = PlateDescSerializer()
     author = UserDescSerializer()
@@ -46,6 +46,7 @@ class PostsListSerializer(serializers.ModelSerializer):
     collect_count = serializers.SerializerMethodField()
     has_liked = serializers.SerializerMethodField()
     has_collected = serializers.SerializerMethodField()
+    coverImg = serializers.SerializerMethodField()
 
     class Meta:
         model = Post
@@ -54,11 +55,11 @@ class PostsListSerializer(serializers.ModelSerializer):
         read_only_fields = ("__all__",)
 
     def get_content(self, obj):
-        return obj.content[:20]
-
+        return obj.content
+    
     def get_like_count(self, obj):
         return obj.whoLikes.count()
-
+    
     def get_collect_count(self, obj):
         return obj.whoCollects.count()
     
@@ -67,16 +68,37 @@ class PostsListSerializer(serializers.ModelSerializer):
     
     def get_has_collected(self, obj):
         return obj.whoCollects.filter(user_id=self.context['request'].user).exists()
+    
+    def get_coverImg(self, obj):
+        cover_img = obj.coverImg
+        request = self.context.get('request')
+        if cover_img:
+            return request.build_absolute_uri(cover_img.url)
+        else:
+            default_img_number = random.randint(1, 9)
+            default_img_path = f'/api/media/covers/default-{default_img_number}.jpg'
+            full_default_img_path = request.build_absolute_uri(default_img_path)
+            return full_default_img_path
+    
 
 
-class PostsDetailSerializer(serializers.ModelSerializer):
+
+class PostsListSerializer(PostBaseSerializer):
+    content = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Post
+        fields = ('postID', 'title', 'content', 'author', 'created', 'is_essence', 'tags', 'plate', 'views', 'coverImg',
+                  'like_count', 'collect_count', 'has_liked', 'has_collected')
+        read_only_fields = ("__all__",)
+
+    def get_content(self, obj):
+        return obj.content[:100]
+
+
+class PostsDetailSerializer(PostBaseSerializer):
     tags = TagListSerializerField(required=False)
-    author = UserDescSerializer(read_only=True)
-    plate = PlateDescSerializer(read_only=True)
-    like_count = serializers.SerializerMethodField()
-    collect_count = serializers.SerializerMethodField()
     plate_id = serializers.IntegerField(write_only=True, required=False)
-
     body_html = serializers.SerializerMethodField()
     toc_html = serializers.SerializerMethodField()
 
@@ -86,12 +108,6 @@ class PostsDetailSerializer(serializers.ModelSerializer):
         read_only_fields = (
             'postID', 'author', 'coverImg', 'created', 'last_modified', 'views', 'whoLikes', 'whoCollects', 'body_html',
             'toc_html')
-
-    def get_like_count(self, obj):
-        return obj.whoLikes.count()
-
-    def get_collect_count(self, obj):
-        return obj.whoCollects.count()
 
     def get_body_html(self, obj):
         return obj.get_md()[0]
@@ -107,22 +123,11 @@ class PostsDetailSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Plate does not exist")
 
 
-class PostCoverImgSerializer(serializers.ModelSerializer):
+class PostCoverImgSerializer(PostBaseSerializer):
     class Meta:
         model = Post
         fields = ('postID', 'coverImg',)
-
-    def to_representation(self, instance):
-        representation = super().to_representation(instance)
-        cover_img = representation.get('coverImg')
-
-        if cover_img is None:
-            default_img_number = random.randint(1, 9)  # 随机选择1到10之间的一个数字
-            default_img_path = f'/api/media/covers/default-{default_img_number}.jpg'  # 假设默认图片的路径为"default-i.jpg"
-            representation['coverImg'] = default_img_path
-
-        return representation
-    
+        read_only_fields = ('postID',)
 
     def save(self, **kwargs):
         post = super().save(**kwargs)
