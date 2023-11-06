@@ -5,3 +5,5 @@ logs/
 *.pyc
 *.pyo
 nohup.out
+.idea/
+.vscode/
