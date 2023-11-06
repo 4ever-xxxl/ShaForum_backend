@@ -88,7 +88,7 @@ class PostListView(generics.ListAPIView):
             page = self.paginate_queryset(queryset)
             if page is None:
                 raise Exception("page is None")
-            serializer = self.get_serializer(page, many=True)
+            serializer = self.get_serializer(page, many=True, context={"request": request})
             return self.get_paginated_response(serializer.data)
         except Exception as e:
             return JsonResponse({"status": "fail", "message": str(e)})
@@ -104,7 +104,7 @@ class PostListView(generics.ListAPIView):
             page = self.paginate_queryset(queryset)
             if page is None:
                 raise Exception("page is None")
-            serializer = self.get_serializer(page, many=True)
+            serializer = self.get_serializer(page, many=True, context={"request": request})
             return self.get_paginated_response(serializer.data)
         except Exception as e:
             return JsonResponse({"status": "fail", "message": str(e)})
@@ -129,7 +129,7 @@ class PostHotListView(generics.ListAPIView):
             page = self.paginate_queryset(queryset)
             if page is None:
                 raise Exception("page is None")
-            serializer = self.get_serializer(page, many=True)
+            serializer = self.get_serializer(page, many=True, context={"request": request})
             return self.get_paginated_response(serializer.data)
         except Exception as e:
             return JsonResponse({"status": "fail", "message": str(e)})
@@ -153,7 +153,7 @@ class PostEssenceListView(generics.ListAPIView):
             page = self.paginate_queryset(queryset)
             if page is None:
                 raise Exception("page is None")
-            serializer = self.get_serializer(page, many=True)
+            serializer = self.get_serializer(page, many=True, context={"request": request})
             return self.get_paginated_response(serializer.data)
         except Exception as e:
             return JsonResponse({"status": "fail", "message": str(e)})
@@ -178,7 +178,7 @@ class MyPostListView(generics.ListAPIView):
             page = self.paginate_queryset(queryset)
             if page is None:
                 raise Exception("page is None")
-            serializer = self.get_serializer(page, many=True)
+            serializer = self.get_serializer(page, many=True, context={"request": request})
             return self.get_paginated_response(serializer.data)
         except Exception as e:
             return JsonResponse({"status": "fail", "message": str(e)})
@@ -393,6 +393,27 @@ class PostCollectView(generics.GenericAPIView):
             )
             collect_user_post.delete()
             return JsonResponse({"status": "success", "message": "uncollect success"})
+        except Exception as e:
+            return JsonResponse({"status": "fail", "message": str(e)})
+
+
+class PostStatusView(generics.GenericAPIView):
+    """
+    Get post liked status and collected status by postID.
+    """
+
+    def get_object(self):
+        return Post.objects.get(pk=self.kwargs["pk"])
+    
+    def get(self, request, *args, **kwargs):
+        try:
+            post = self.get_object()
+            return JsonResponse({"status": "success", "post": {
+                "postID": post.postID,
+                "userID": request.user.userID,
+                "has_liked": post.whoLikes.filter(user_id=request.user.userID).exists(),
+                "has_collected": post.whoCollects.filter(user_id=request.user.userID).exists(),
+            }})
         except Exception as e:
             return JsonResponse({"status": "fail", "message": str(e)})
 

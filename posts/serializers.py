@@ -44,11 +44,13 @@ class PostsListSerializer(serializers.ModelSerializer):
     content = serializers.SerializerMethodField()
     like_count = serializers.SerializerMethodField()
     collect_count = serializers.SerializerMethodField()
+    has_liked = serializers.SerializerMethodField()
+    has_collected = serializers.SerializerMethodField()
 
     class Meta:
         model = Post
         fields = ('postID', 'title', 'content', 'author', 'created', 'is_essence', 'tags', 'plate', 'views', 'coverImg',
-                  'like_count', 'collect_count')
+                  'like_count', 'collect_count', 'has_liked', 'has_collected')
         read_only_fields = ("__all__",)
 
     def get_content(self, obj):
@@ -59,6 +61,12 @@ class PostsListSerializer(serializers.ModelSerializer):
 
     def get_collect_count(self, obj):
         return obj.whoCollects.count()
+    
+    def get_has_liked(self, obj):
+        return obj.whoLikes.filter(user_id=self.context['request'].user).exists()
+    
+    def get_has_collected(self, obj):
+        return obj.whoCollects.filter(user_id=self.context['request'].user).exists()
 
 
 class PostsDetailSerializer(serializers.ModelSerializer):
