@@ -110,6 +110,55 @@ class PostListView(generics.ListAPIView):
             return JsonResponse({"status": "fail", "message": str(e)})
 
 
+class PostHotListView(generics.ListAPIView):
+    """
+    List all hot posts with simple information by filter.
+    """
+
+    pagination_class = CustomPagination
+    queryset = Post.objects.all()
+    serializer_class = PostsListSerializer
+    filter_backends = [DjangoFilterBackend]
+
+    def get_queryset(self):
+        return self.queryset.order_by("-views")
+
+    def get(self, request, *args, **kwargs):
+        try:
+            queryset = self.filter_queryset(self.get_queryset())
+            page = self.paginate_queryset(queryset)
+            if page is None:
+                raise Exception("page is None")
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        except Exception as e:
+            return JsonResponse({"status": "fail", "message": str(e)})
+        
+class PostEssenceListView(generics.ListAPIView):
+    """
+    List all essence posts with simple information by filter.
+    """
+    
+    pagination_class = CustomPagination
+    queryset = Post.objects.all()
+    serializer_class = PostsListSerializer
+    filter_backends = [DjangoFilterBackend]
+
+    def get_queryset(self):
+        return self.queryset.filter(is_essence=True)
+
+    def get(self, request, *args, **kwargs):
+        try:
+            queryset = self.filter_queryset(self.get_queryset())
+            page = self.paginate_queryset(queryset)
+            if page is None:
+                raise Exception("page is None")
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        except Exception as e:
+            return JsonResponse({"status": "fail", "message": str(e)})
+
+
 class MyPostListView(generics.ListAPIView):
     """
     List all posts posted by current user.
