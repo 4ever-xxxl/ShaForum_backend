@@ -7,15 +7,33 @@ from rest_framework import generics
 from API.CustomPagination import CustomPagination
 from comments.models import Comment
 from posts.models import Post, Plate, LikeUserPost, CollectUserPost, ManagePlate
-from posts.permissions import PostsActionPermission, PlateActionPermission, ManagePlateActionPermission, \
-    PostCoverImgPermission
-from posts.serializers import PostsListSerializer, PostsDetailSerializer, PlateListSerializer, PlateDetailSerializer, \
-    PostCreateSerializer, PlateDescSerializer, PlateCreateSerializer, ManagePlateListSerializer, \
-    ManagePlateCreateSerializer, ManagePlateActionSerializer, PostCoverImgSerializer
-from comments.serializers import CommentCreateSerializer, CommentDetailSerializer, CommentListSerializer
+from posts.permissions import (
+    PostsActionPermission,
+    PlateActionPermission,
+    ManagePlateActionPermission,
+    PostCoverImgPermission,
+)
+from posts.serializers import (
+    PostsListSerializer,
+    PostsDetailSerializer,
+    PlateListSerializer,
+    PlateDetailSerializer,
+    PostCreateSerializer,
+    PlateDescSerializer,
+    PlateCreateSerializer,
+    ManagePlateListSerializer,
+    ManagePlateCreateSerializer,
+    ManagePlateActionSerializer,
+    PostCoverImgSerializer,
+)
+from comments.serializers import (
+    CommentCreateSerializer,
+    CommentDetailSerializer,
+    CommentListSerializer,
+)
 import logging
 
-logger = logging.getLogger('django')
+logger = logging.getLogger("django")
 
 
 def index(request):
@@ -25,8 +43,9 @@ def index(request):
 # region Post
 class PostDetailView(generics.RetrieveAPIView):
     """
-     Retrieve a post instance with all details by postID.
+    Retrieve a post instance with all details by postID.
     """
+
     queryset = Post.objects.all()
     serializer_class = PostsDetailSerializer
 
@@ -35,30 +54,42 @@ class PostDetailView(generics.RetrieveAPIView):
             post = self.get_object()
             post.increase_views()
             serializer = PostsDetailSerializer(post)
-            return JsonResponse({'status': "success", 'post': serializer.data})
+            return JsonResponse({"status": "success", "post": serializer.data})
         except Exception as e:
-            return JsonResponse({'status': "fail", 'message': str(e)})
+            return JsonResponse({"status": "fail", "message": str(e)})
 
 
 class PostListView(generics.ListAPIView):
     """
     List all posts with simple information by filter.
     """
+
     pagination_class = CustomPagination
     queryset = Post.objects.all()
     serializer_class = PostsListSerializer
     filter_backends = [DjangoFilterBackend]
     filter_fields = {
-        'postID': ['exact'],
-        'title': ['exact', 'contains'],
-        'content': ['exact', 'contains'],
-        'author__userID': ['exact'],
-        'author__username': ['exact', 'contains'],
-        'tags__name': ['exact', 'contains'],
-        'plate__plateID': ['exact'],
-        'plate__name': ['exact', 'contains'],
-        'is_essence': ['exact'],
+        "postID": ["exact"],
+        "title": ["exact", "contains"],
+        "content": ["exact", "contains"],
+        "author__userID": ["exact"],
+        "author__username": ["exact", "contains"],
+        "tags__name": ["exact", "contains"],
+        "plate__plateID": ["exact"],
+        "plate__name": ["exact", "contains"],
+        "is_essence": ["exact"],
     }
+
+    def get(self, request, *args, **kwargs):
+        try:
+            queryset = self.filter_queryset(self.get_queryset())
+            page = self.paginate_queryset(queryset)
+            if page is None:
+                raise Exception("page is None")
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        except Exception as e:
+            return JsonResponse({"status": "fail", "message": str(e)})
 
     def post(self, request, *args, **kwargs):
         try:
@@ -74,48 +105,77 @@ class PostListView(generics.ListAPIView):
             serializer = self.get_serializer(page, many=True)
             return self.get_paginated_response(serializer.data)
         except Exception as e:
-            return JsonResponse({'status': "fail", 'message': str(e)})
+            return JsonResponse({"status": "fail", "message": str(e)})
+
+
+class MyPostListView(generics.ListAPIView):
+    """
+    List all posts posted by current user.
+    """
+
+    pagination_class = CustomPagination
+    queryset = Post.objects.all()
+    serializer_class = PostsListSerializer
+    filter_backends = [DjangoFilterBackend]
+
+    def get_queryset(self):
+        return self.queryset.filter(author=self.request.user)
+
+    def get(self, request, *args, **kwargs):
+        try:
+            queryset = self.filter_queryset(self.get_queryset())
+            page = self.paginate_queryset(queryset)
+            if page is None:
+                raise Exception("page is None")
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        except Exception as e:
+            return JsonResponse({"status": "fail", "message": str(e)})
 
 
 class PostCreateView(generics.CreateAPIView):
     """
     Create a post instance.
     """
+
     queryset = Post.objects.all()
     serializer_class = PostCreateSerializer
 
     def post(self, request, *args, **kwargs):
         try:
             cpdata = request.data.copy()
-            cpdata['author_id'] = request.user.userID
+            cpdata["author_id"] = request.user.userID
             serializer = PostCreateSerializer(data=cpdata)
             serializer.is_valid(raise_exception=True)
             serializer.save()
-            new_post = Post.objects.get(postID=serializer.data['postID'])
-            return JsonResponse({'status': "success", 'post': PostsDetailSerializer(new_post).data})
+            new_post = Post.objects.get(postID=serializer.data["postID"])
+            return JsonResponse(
+                {"status": "success", "post": PostsDetailSerializer(new_post).data}
+            )
         except Exception as e:
-            return JsonResponse({'status': "fail", 'message': str(e)})
+            return JsonResponse({"status": "fail", "message": str(e)})
 
 
 class PostActionView(generics.RetrieveUpdateDestroyAPIView):
     """
     Action on a post instance by postID.
     """
+
     queryset = Post.objects.all()
     serializer_class = PostsDetailSerializer
     permission_classes = [PostsActionPermission]
 
     def get_object(self):
-        return self.queryset.get(pk=self.kwargs['pk'])
+        return self.queryset.get(pk=self.kwargs["pk"])
 
     def get(self, request, *args, **kwargs):
         try:
             post = self.get_object()
             serializer = PostsDetailSerializer(post)
             post.increase_views()
-            return JsonResponse({'status': "success", 'post': serializer.data})
+            return JsonResponse({"status": "success", "post": serializer.data})
         except Exception as e:
-            return JsonResponse({'status': "fail", 'message': str(e)})
+            return JsonResponse({"status": "fail", "message": str(e)})
 
     def patch(self, request, *args, **kwargs):
         try:
@@ -123,36 +183,37 @@ class PostActionView(generics.RetrieveUpdateDestroyAPIView):
             serializer = self.get_serializer(post, data=request.data, partial=True)
             serializer.is_valid(raise_exception=True)
             serializer.save()
-            return JsonResponse({'status': "success", 'post': serializer.data})
+            return JsonResponse({"status": "success", "post": serializer.data})
         except Exception as e:
-            return JsonResponse({'status': "fail", 'message': str(e)})
+            return JsonResponse({"status": "fail", "message": str(e)})
 
     def delete(self, request, *args, **kwargs):
         try:
             post = self.get_object()
             post.delete()
-            return JsonResponse({'status': "success", 'message': "delete success"})
+            return JsonResponse({"status": "success", "message": "delete success"})
         except Exception as e:
-            return JsonResponse({'status': "fail", 'message': str(e)})
+            return JsonResponse({"status": "fail", "message": str(e)})
 
 
 class PostCoverImgView(generics.GenericAPIView):
     """
     Action on a post instance's coverImg by postID.
     """
+
     searliazer_class = PostCoverImgSerializer
     permission_classes = [PostCoverImgPermission]
 
     def get_object(self):
-        return Post.objects.get(pk=self.kwargs['pk'])
+        return Post.objects.get(pk=self.kwargs["pk"])
 
     def get(self, request, *args, **kwargs):
         try:
             post = self.get_object()
             post_info = self.searliazer_class(post).data
-            return JsonResponse({'status': "success", 'post': post_info})
+            return JsonResponse({"status": "success", "post": post_info})
         except Exception as e:
-            return JsonResponse({'status': "fail", 'message': str(e)})
+            return JsonResponse({"status": "fail", "message": str(e)})
 
     def post(self, request, *args, **kwargs):
         try:
@@ -162,18 +223,21 @@ class PostCoverImgView(generics.GenericAPIView):
             post.coverImg.delete()
             serializer.save()
             post_info = serializer.data
-            return JsonResponse({'status': "success", 'post': post_info})
+            return JsonResponse({"status": "success", "post": post_info})
         except Exception as e:
-            return JsonResponse({'status': "fail", 'message': str(e)})
+            return JsonResponse({"status": "fail", "message": str(e)})
 
     def delete(self, request, *args, **kwargs):
         try:
             post = self.get_object()
             post.coverImg.delete()
             post.save()
-            return JsonResponse({'status': "success", 'message': "delete coverImg success"})
+            return JsonResponse(
+                {"status": "success", "message": "delete coverImg success"}
+            )
         except Exception as e:
-            return JsonResponse({'status': "fail", 'message': str(e)})
+            return JsonResponse({"status": "fail", "message": str(e)})
+
 
 class PostLikeView(generics.GenericAPIView):
     """
@@ -181,27 +245,29 @@ class PostLikeView(generics.GenericAPIView):
     """
 
     def get_object(self):
-        return Post.objects.get(pk=self.kwargs['pk'])
+        return Post.objects.get(pk=self.kwargs["pk"])
 
     def get(self, request, *args, **kwargs):
         try:
             post = self.get_object()
-            like_user_post, created = LikeUserPost.objects.get_or_create(user=request.user, post=post)
+            like_user_post, created = LikeUserPost.objects.get_or_create(
+                user=request.user, post=post
+            )
             if created:
-                return JsonResponse({'status': "success", 'message': "like success"})
+                return JsonResponse({"status": "success", "message": "like success"})
             else:
-                return JsonResponse({'status': "success", 'message': "already liked"})
+                return JsonResponse({"status": "success", "message": "already liked"})
         except Exception as e:
-            return JsonResponse({'status': "fail", 'message': str(e)})
+            return JsonResponse({"status": "fail", "message": str(e)})
 
     def delete(self, request, *args, **kwargs):
         try:
             post = self.get_object()
             like_user_post = LikeUserPost.objects.get(user=request.user, post=post)
             like_user_post.delete()
-            return JsonResponse({'status': "success", 'message': "unlike success"})
+            return JsonResponse({"status": "success", "message": "unlike success"})
         except Exception as e:
-            return JsonResponse({'status': "fail", 'message': str(e)})
+            return JsonResponse({"status": "fail", "message": str(e)})
 
 
 class PostCollectView(generics.GenericAPIView):
@@ -210,55 +276,68 @@ class PostCollectView(generics.GenericAPIView):
     """
 
     def get_object(self):
-        return Post.objects.get(pk=self.kwargs['pk'])
+        return Post.objects.get(pk=self.kwargs["pk"])
 
     def get(self, request, *args, **kwargs):
         try:
             post = self.get_object()
-            collect_user_post, created = CollectUserPost.objects.get_or_create(user=request.user, post=post)
+            collect_user_post, created = CollectUserPost.objects.get_or_create(
+                user=request.user, post=post
+            )
             if created:
-                return JsonResponse({'status': "success", 'message': "collect success"})
+                return JsonResponse({"status": "success", "message": "collect success"})
             else:
-                return JsonResponse({'status': "success", 'message': "already collected"})
+                return JsonResponse(
+                    {"status": "success", "message": "already collected"}
+                )
         except Exception as e:
-            return JsonResponse({'status': "fail", 'message': str(e)})
+            return JsonResponse({"status": "fail", "message": str(e)})
 
     def delete(self, request, *args, **kwargs):
         try:
             post = self.get_object()
-            collect_user_post = CollectUserPost.objects.get(user=request.user, post=post)
+            collect_user_post = CollectUserPost.objects.get(
+                user=request.user, post=post
+            )
             collect_user_post.delete()
-            return JsonResponse({'status': "success", 'message': "uncollect success"})
+            return JsonResponse({"status": "success", "message": "uncollect success"})
         except Exception as e:
-            return JsonResponse({'status': "fail", 'message': str(e)})
+            return JsonResponse({"status": "fail", "message": str(e)})
 
 
 # endregion
 
 # region Comment
 
+
 class PostCommentView(generics.GenericAPIView):
     """
     Create a comment instance.
     """
+
     queryset = Comment.objects.all()
     serializer_class = CommentCreateSerializer
 
     def get_object(self):
-        return Post.objects.get(pk=self.kwargs['pk'])
+        return Post.objects.get(pk=self.kwargs["pk"])
 
     def post(self, request, *args, **kwargs):
         try:
             cpdata = request.data.copy()
-            cpdata['author'] = request.user.userID
-            cpdata['post'] = self.kwargs['pk']
+            cpdata["author"] = request.user.userID
+            cpdata["post"] = self.kwargs["pk"]
             serializer = CommentCreateSerializer(data=cpdata)
             serializer.is_valid(raise_exception=True)
             serializer.save()
-            new_comment = Comment.objects.get(commentID=serializer.data['commentID'])
-            return JsonResponse({'status': "success", 'comment': CommentDetailSerializer(new_comment).data})
+            new_comment = Comment.objects.get(commentID=serializer.data["commentID"])
+            return JsonResponse(
+                {
+                    "status": "success",
+                    "comment": CommentDetailSerializer(new_comment).data,
+                }
+            )
         except Exception as e:
-            return JsonResponse({'status': "fail", 'message': str(e)})
+            return JsonResponse({"status": "fail", "message": str(e)})
 
 
 class PostCommentListView(generics.ListAPIView):
@@ -266,19 +345,20 @@ class PostCommentListView(generics.ListAPIView):
     serializer_class = CommentListSerializer
 
     def get_object(self):
-        return Post.objects.get(pk=self.kwargs['pk'])
+        return Post.objects.get(pk=self.kwargs["pk"])
 
     def get(self, request, *args, **kwargs):
         try:
             post = self.get_object()
             queryset = self.filter_queryset(self.get_queryset()).filter(post=post)
             serializer = self.get_serializer(queryset, many=True)
-            return JsonResponse({'status': "success", 'comments': serializer.data})
+            return JsonResponse({"status": "success", "comments": serializer.data})
         except Exception as e:
-            return JsonResponse({'status': "fail", 'message': str(e)})
+            return JsonResponse({"status": "fail", "message": str(e)})
 
 
 # endregion
+
 
 # region Plate
 class PlateListView(generics.ListAPIView):
@@ -287,8 +367,8 @@ class PlateListView(generics.ListAPIView):
     serializer_class = PlateListSerializer
     filter_backends = [DjangoFilterBackend]
     filter_fields = {
-        'plateID': ['exact'],
-        'name': ['exact', 'contains'],
+        "plateID": ["exact"],
+        "name": ["exact", "contains"],
     }
 
     def post(self, request, *args, **kwargs):
@@ -305,7 +385,7 @@ class PlateListView(generics.ListAPIView):
             serializer = self.get_serializer(queryset, many=True)
             return self.get_paginated_response(serializer.data)
         except Exception as e:
-            return JsonResponse({'status': "fail", 'message': str(e)})
+            return JsonResponse({"status": "fail", "message": str(e)})
 
     def get(self, request, *args, **kwargs):
         try:
@@ -316,7 +396,7 @@ class PlateListView(generics.ListAPIView):
             serializer = self.get_serializer(queryset, many=True)
             return self.get_paginated_response(serializer.data)
         except Exception as e:
-            return JsonResponse({'status': "fail", 'message': str(e)})
+            return JsonResponse({"status": "fail", "message": str(e)})
 
 
 class PlateDetailView(generics.RetrieveAPIView):
@@ -327,9 +407,9 @@ class PlateDetailView(generics.RetrieveAPIView):
         try:
             plate = self.get_object()
             serializer = self.get_serializer(plate)
-            return JsonResponse({'status': "success", 'plate': serializer.data})
+            return JsonResponse({"status": "success", "plate": serializer.data})
         except Exception as e:
-            return JsonResponse({'status': "fail", 'message': str(e)})
+            return JsonResponse({"status": "fail", "message": str(e)})
 
 
 class PlateCreateView(generics.CreateAPIView):
@@ -342,10 +422,12 @@ class PlateCreateView(generics.CreateAPIView):
             serializer = PlateCreateSerializer(data=request.data)
             serializer.is_valid(raise_exception=True)
             serializer.save()
-            new_plate = Plate.objects.get(plateID=serializer.data['plateID'])
-            return JsonResponse({'status': "success", 'plate': PlateDescSerializer(new_plate).data})
+            new_plate = Plate.objects.get(plateID=serializer.data["plateID"])
+            return JsonResponse(
+                {"status": "success", "plate": PlateDescSerializer(new_plate).data}
+            )
         except Exception as e:
-            return JsonResponse({'status': "fail", 'message': str(e)})
+            return JsonResponse({"status": "fail", "message": str(e)})
 
 
 class PlateActionView(generics.RetrieveUpdateDestroyAPIView):
@@ -354,15 +436,15 @@ class PlateActionView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = PlateDetailSerializer
 
     def get_object(self):
-        return self.queryset.get(pk=self.kwargs['pk'])
+        return self.queryset.get(pk=self.kwargs["pk"])
 
     def get(self, request, *args, **kwargs):
         try:
             plate = self.get_object()
             serializer = self.get_serializer(plate)
-            return JsonResponse({'status': "success", 'plate': serializer.data})
+            return JsonResponse({"status": "success", "plate": serializer.data})
         except Exception as e:
-            return JsonResponse({'status': "fail", 'message': str(e)})
+            return JsonResponse({"status": "fail", "message": str(e)})
 
     def patch(self, request, *args, **kwargs):
         try:
@@ -370,22 +452,23 @@ class PlateActionView(generics.RetrieveUpdateDestroyAPIView):
             serializer = self.get_serializer(plate, data=request.data, partial=True)
             serializer.is_valid(raise_exception=True)
             serializer.save()
-            return JsonResponse({'status': "success", 'plate': serializer.data})
+            return JsonResponse({"status": "success", "plate": serializer.data})
         except Exception as e:
-            return JsonResponse({'status': "fail", 'message': str(e)})
+            return JsonResponse({"status": "fail", "message": str(e)})
 
     def delete(self, request, *args, **kwargs):
         try:
             plate = self.get_object()
             plate.delete()
-            return JsonResponse({'status': "success", 'message': "delete success"})
+            return JsonResponse({"status": "success", "message": "delete success"})
         except Exception as e:
-            return JsonResponse({'status': "fail", 'message': str(e)})
+            return JsonResponse({"status": "fail", "message": str(e)})
 
 
 # endregion
 
 # region ManagePlate
+
 
 class ManagePlateListView(generics.ListAPIView):
     pagination_class = CustomPagination
@@ -393,11 +476,11 @@ class ManagePlateListView(generics.ListAPIView):
     serializer_class = ManagePlateListSerializer
     filter_backends = [DjangoFilterBackend]
     filter_fields = {
-        'mpID': ['exact'],
-        'plate__plateID': ['exact'],
-        'plate__name': ['exact', 'contains'],
-        'moderator__userID': ['exact'],
-        'moderator__username': ['exact', 'contains'],
+        "mpID": ["exact"],
+        "plate__plateID": ["exact"],
+        "plate__name": ["exact", "contains"],
+        "moderator__userID": ["exact"],
+        "moderator__username": ["exact", "contains"],
     }
 
     def post(self, request, *args, **kwargs):
@@ -414,7 +497,7 @@ class ManagePlateListView(generics.ListAPIView):
             serializer = self.get_serializer(queryset, many=True)
             return self.get_paginated_response(serializer.data)
         except Exception as e:
-            return JsonResponse({'status': "fail", 'message': str(e)})
+            return JsonResponse({"status": "fail", "message": str(e)})
 
     def get(self, request, *args, **kwargs):
         try:
@@ -425,7 +508,7 @@ class ManagePlateListView(generics.ListAPIView):
             serializer = self.get_serializer(queryset, many=True)
             return self.get_paginated_response(serializer.data)
         except Exception as e:
-            return JsonResponse({'status': "fail", 'message': str(e)})
+            return JsonResponse({"status": "fail", "message": str(e)})
 
 
 class ManagePlateCreateView(generics.CreateAPIView):
@@ -440,11 +523,16 @@ class ManagePlateCreateView(generics.CreateAPIView):
             new_manage = serializer.save()
             user = new_manage.moderator
             if user.managePlates.count() == 1:  # 如果用户原来没有管理的板块, 则将其加入moderator组
-                group = Group.objects.get(name='moderator')
+                group = Group.objects.get(name="moderator")
                 user.groups.add(group)
-            return JsonResponse({'status': "success", 'manage_plate': ManagePlateListSerializer(new_manage).data})
+            return JsonResponse(
+                {
+                    "status": "success",
+                    "manage_plate": ManagePlateListSerializer(new_manage).data,
+                }
+            )
         except Exception as e:
-            return JsonResponse({'status': "fail", 'message': str(e)})
+            return JsonResponse({"status": "fail", "message": str(e)})
 
 
 class ManagePlateActionView(generics.RetrieveDestroyAPIView):
@@ -453,15 +541,15 @@ class ManagePlateActionView(generics.RetrieveDestroyAPIView):
     serializer_class = ManagePlateActionSerializer
 
     def get_object(self):
-        return self.queryset.get(pk=self.kwargs['pk'])
+        return self.queryset.get(pk=self.kwargs["pk"])
 
     def get(self, request, *args, **kwargs):
         try:
             manage_plate = self.get_object()
             serializer = self.get_serializer(manage_plate)
-            return JsonResponse({'status': "success", 'manage_plate': serializer.data})
+            return JsonResponse({"status": "success", "manage_plate": serializer.data})
         except Exception as e:
-            return JsonResponse({'status': "fail", 'message': str(e)})
+            return JsonResponse({"status": "fail", "message": str(e)})
 
     def delete(self, request, *args, **kwargs):
         try:
@@ -469,11 +557,11 @@ class ManagePlateActionView(generics.RetrieveDestroyAPIView):
             user = manage_plate.moderator
             manage_plate.delete()
             if user.managePlates.count() == 0:  # 如果删除后用户没有管理的板块了, 则将其从moderator组中移除
-                group = Group.objects.get(name='moderator')
+                group = Group.objects.get(name="moderator")
                 user.groups.remove(group)
-            return JsonResponse({'status': "success", 'message': "delete success"})
+            return JsonResponse({"status": "success", "message": "delete success"})
         except Exception as e:
-            return JsonResponse({'status': "fail", 'message': str(e)})
+            return JsonResponse({"status": "fail", "message": str(e)})
 
 
 # endregion

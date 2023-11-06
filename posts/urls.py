@@ -13,6 +13,7 @@ urlpatterns = [
     path('post/coverImg/<int:pk>/', views.PostCoverImgView.as_view(), name='post_coverImg'),  # 对帖子进行封面图片操作
     path('post/comment/<int:pk>/', views.PostCommentView.as_view(), name='post_comment'),  # 对帖子进行评论
     path('post/comment/list/<int:pk>/', views.PostCommentListView.as_view(), name='post_comment_list'),  # 获取帖子评论列表
+    path('post/my/list/', views.MyPostListView.as_view(), name='my_post_list'),  # 获取我的帖子列表
 
 
     path('plate/list/', views.PlateListView.as_view(), name='plate_list'),  # 用于获取板块列表
