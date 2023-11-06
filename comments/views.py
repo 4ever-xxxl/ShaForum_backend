@@ -52,7 +52,10 @@ class CommentListView(ListAPIView):
             query_filters = Q()
             for field, value in request.data.items():
                 if field in self.filter_fields:
-                    lookup = f"{field}__icontains"  # 使用icontains进行部分匹配
+                    if 'contains' in self.filter_fields[field]:
+                        lookup = f"{field}__icontains"
+                    else:
+                        lookup = f"{field}__exact"
                     query_filters &= Q(**{lookup: value})
             queryset = self.filter_queryset(self.get_queryset()).filter(query_filters)
             page = self.paginate_queryset(queryset)

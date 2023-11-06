@@ -72,13 +72,13 @@ class PostListView(generics.ListAPIView):
     filter_backends = [DjangoFilterBackend]
     filter_fields = {
         "postID": ["exact"],
-        "title": ["exact", "contains"],
-        "content": ["exact", "contains"],
+        "title": ["contains"],
+        "content": ["contains"],
         "author__userID": ["exact"],
-        "author__username": ["exact", "contains"],
-        "tags__name": ["exact", "contains"],
+        "author__username": ["contains"],
+        "tags__name": ["contains"],
         "plate__plateID": ["exact"],
-        "plate__name": ["exact", "contains"],
+        "plate__name": ["contains"],
         "is_essence": ["exact"],
     }
 
@@ -98,7 +98,10 @@ class PostListView(generics.ListAPIView):
             query_filters = Q()
             for field, value in request.data.items():
                 if field in self.filter_fields:
-                    lookup = f"{field}__icontains"  # 使用icontains进行部分匹配
+                    if 'contains' in self.filter_fields[field]:
+                        lookup = f"{field}__icontains"
+                    else:
+                        lookup = f"{field}__exact"
                     query_filters &= Q(**{lookup: value})
             queryset = self.filter_queryset(self.get_queryset()).filter(query_filters)
             page = self.paginate_queryset(queryset)
@@ -491,7 +494,7 @@ class PlateListView(generics.ListAPIView):
     filter_backends = [DjangoFilterBackend]
     filter_fields = {
         "plateID": ["exact"],
-        "name": ["exact", "contains"],
+        "name": ["contains"],
     }
 
     def post(self, request, *args, **kwargs):
@@ -499,7 +502,10 @@ class PlateListView(generics.ListAPIView):
             query_filters = Q()
             for field, value in request.data.items():
                 if field in self.filter_fields:
-                    lookup = f"{field}__icontains"  # 使用icontains进行部分匹配
+                    if 'contains' in self.filter_fields[field]:
+                        lookup = f"{field}__icontains"
+                    else:
+                        lookup = f"{field}__exact"
                     query_filters &= Q(**{lookup: value})
             queryset = self.filter_queryset(self.get_queryset()).filter(query_filters)
             page = self.paginate_queryset(queryset)
@@ -602,9 +608,9 @@ class ManagePlateListView(generics.ListAPIView):
     filter_fields = {
         "mpID": ["exact"],
         "plate__plateID": ["exact"],
-        "plate__name": ["exact", "contains"],
+        "plate__name": ["contains"],
         "moderator__userID": ["exact"],
-        "moderator__username": ["exact", "contains"],
+        "moderator__username": ["contains"],
     }
 
     def post(self, request, *args, **kwargs):
@@ -612,7 +618,10 @@ class ManagePlateListView(generics.ListAPIView):
             query_filters = Q()
             for field, value in request.data.items():
                 if field in self.filter_fields:
-                    lookup = f"{field}__icontains"  # 使用icontains进行部分匹配
+                    if 'contains' in self.filter_fields[field]:
+                        lookup = f"{field}__icontains"
+                    else:
+                        lookup = f"{field}__exact"
                     query_filters &= Q(**{lookup: value})
             queryset = self.filter_queryset(self.get_queryset()).filter(query_filters)
             page = self.paginate_queryset(queryset)
