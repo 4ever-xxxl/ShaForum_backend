@@ -4,7 +4,7 @@ from notifications.models import Notification
 from users.models import User
 from posts.models import Post, Plate
 from comments.models import Comment
-from users.descSerializers import UserBriefSerializer
+from users.descSerializers import UserDescSerializer
 from posts.descSerializers import PostDescSerializer, PlateDescSerializer
 from comments.descSerializers import CommentDescSerializer
 
@@ -66,7 +66,7 @@ class NotificationSerializer(serializers.ModelSerializer):
         
     def get_actor(self, obj):
         actor_object_id = str(obj.actor_object_id)
-        return UserBriefSerializer(User.objects.get(userID=actor_object_id)).data
+        return UserDescSerializer(User.objects.get(userID=actor_object_id)).data
     
     def get_target(self, obj):
         target_object_id = str(obj.target_object_id)

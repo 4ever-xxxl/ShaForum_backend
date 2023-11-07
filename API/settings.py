@@ -210,6 +210,10 @@ LOGGING = {
             '()': 'django.utils.log.CallbackFilter',
             'callback': lambda record: not record.name.startswith('django.utils.autoreload'),
         },
+        'skip_db_backends': {
+            '()': 'django.utils.log.CallbackFilter',
+            'callback': lambda record: not record.name.startswith('django.db.backends'),
+        },
     },
     'handlers': {
         # 定义处理器
@@ -221,7 +225,7 @@ LOGGING = {
         },
         'file': {
             'level': 'DEBUG',
-            'filters': ['skip_autoreload'],
+            'filters': ['skip_autoreload', 'skip_db_backends'],
             'class': 'logging.FileHandler',  # 输出到文件
             'filename': os.path.join(BASE_DIR, 'logs', 'debug.log'),
             'formatter': 'standard'

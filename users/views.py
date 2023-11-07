@@ -567,8 +567,11 @@ class NotificationListView(generics.ListAPIView):
             queryset = self.get_queryset()
             page = self.paginate_queryset(queryset)
             if page is not None:
-                serializer = NotificationSerializer(page, many=True)
-                return self.get_paginated_response(serializer.data)
+                serializer = NotificationSerializer(page, many=True, context={'request': request})
+                unread_count = self.request.user.notifications.unread().count()
+                serializer_data = serializer.data
+                serializer_data.append({'unread_count': unread_count})
+                return self.get_paginated_response(serializer_data)
             else:
                 raise Exception('page is None')
         except Exception as e:

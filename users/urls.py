@@ -14,7 +14,7 @@ urlpatterns = [
     path('token/balcklist/', TokenBlacklistView.as_view(), name='token_blacklist'),
     # 以上是simplejwt的自带路由
 
-    path('register/verifycode/', views.RegisterVerifyCodeView.as_view(), name='verifycode for register'),
+    path('register/code/', views.RegisterVerifyCodeView.as_view(), name='verifycode for register'),
     path("register/", views.UserRegisterView.as_view(), name="register"),
     path("login/", views.UserLoginView.as_view(), name="login"),
     path('relogin/', views.UserReLoginView.as_view(), name='relogin'),
@@ -24,12 +24,12 @@ urlpatterns = [
     path("user/avatar/<int:pk>/", views.UserAvatarView.as_view(), name="avatar"),
 
     path("password/change/", views.UserPasswordChangeView.as_view(), name="password_change"),
-    path("password/reset/verify/", views.UserPasswordResetVerifyView.as_view(), name="password_reset_verify"),
+    path("password/reset/code/", views.UserPasswordResetVerifyView.as_view(), name="password_reset_verify"),
     path("password/reset/", views.UserPasswordResetView.as_view(), name="password_reset"),
 
     path("notification/list/", views.NotificationListView.as_view(), name="notification_list"),
     path("notification/<int:pk>/", views.NotificationDetailView.as_view(), name="notification_detail"),
     path("notification/read/<int:pk>/", views.NotificationReadView.as_view(), name="notification_read"),
-    path("notification/allread/", views.NotificationAllReadView.as_view(), name="notification_allread"),
+    path("notification/all/read/", views.NotificationAllReadView.as_view(), name="notification_allread"),
 ]
 
