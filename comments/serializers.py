@@ -1,9 +1,11 @@
 from rest_framework import serializers
-
+from users.descSerializers import UserDescSerializer
 from comments.models import Comment
 
 
 class CommentSerializer(serializers.ModelSerializer):
+    author = UserDescSerializer()
+    reply_to = UserDescSerializer()
     like_count = serializers.SerializerMethodField()
     collect_count = serializers.SerializerMethodField()
     reply_count = serializers.SerializerMethodField()
