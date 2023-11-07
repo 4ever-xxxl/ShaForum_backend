@@ -7,3 +7,4 @@ logs/
 nohup.out
 .idea/
 .vscode/
+.env

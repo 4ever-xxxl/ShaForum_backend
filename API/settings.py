@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 import datetime
 import os.path
 from pathlib import Path
+from decouple import config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -139,18 +140,14 @@ REST_FRAMEWORK = {
 # 设置登录检查的URL
 LOGIN_URL = '/api/login/'
 
-# SMTP服务器，改为你的邮箱的smtp!
-EMAIL_HOST = 'smtp.yandex.com'
-# 改为你自己的邮箱名！
-EMAIL_HOST_USER = 'm1ca@cnss.io'
-# 你的邮箱密码
-EMAIL_HOST_PASSWORD = 'hjqkjsljwmuuzajl'
-# 发送邮件的端口
+# 设置邮箱
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.qq.com'
+EMAIL_HOST_USER = 'lx10ng@qq.com'
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
 EMAIL_PORT = 465
-# 是否使用 TLS
-EMAIL_USE_TLS = True
-# 默认的发件人
-DEFAULT_FROM_EMAIL = 'posts < 重置密码 < from yandex.com > >'
+EMAIL_USE_SSL = True
+DEFAULT_FROM_EMAIL = 'lx10ng@qq.com'
 
 # JWT settings
 SIMPLE_JWT = {
@@ -209,6 +206,10 @@ LOGGING = {
         'require_debug_true': {
             '()': 'django.utils.log.RequireDebugTrue',
         },
+        'skip_autoreload': {
+            '()': 'django.utils.log.CallbackFilter',
+            'callback': lambda record: not record.name.startswith('django.utils.autoreload'),
+        },
     },
     'handlers': {
         # 定义处理器
@@ -220,6 +221,7 @@ LOGGING = {
         },
         'file': {
             'level': 'DEBUG',
+            'filters': ['skip_autoreload'],
             'class': 'logging.FileHandler',  # 输出到文件
             'filename': os.path.join(BASE_DIR, 'logs', 'debug.log'),
             'formatter': 'standard'

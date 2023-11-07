@@ -7,9 +7,71 @@ from users.permissions import UserProfilePermission, UserAvatarPermission
 from users.serializers import UserRegisterSerializer, UserProfileSerializer, UserAvatarSerializer, NotificationSerializer
 from users.models import User
 from API.CustomPagination import CustomPagination
+from django.core.mail import send_mail
+from django.core.cache import cache
+from datetime import datetime, timedelta
+from API.settings import DEFAULT_FROM_EMAIL
 import logging
 
 logger = logging.getLogger('django')
+
+class RegisterVerificationCodeView(generics.GenericAPIView):
+    """
+    Send verification code view
+    
+    Prameters:
+        email: str (required)
+
+    Return:
+        status: str (success or failed)
+        message: str (error message)
+    
+    Return example:
+        {
+            "status": "success"
+        }
+    
+    Raises:
+        ValidationError: if email is invalid
+        Exception: if email is already existed
+
+    Permission:
+        AllowAny
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request, *args, **kwargs):
+        try:
+            email = request.data.get('email')
+            if User.objects.filter(email=email).exists():
+                return JsonResponse({'status': 'failed', 'message': 'email already exists'})
+            
+            cache_key = 'verify_code_{}'.format(request.session.session_key)
+            cache_key_time = 'verify_code_time_{}'.format(request.session.session_key)
+            
+            last_sent = cache.get(cache_key_time)
+            if last_sent and datetime.now() - last_sent < timedelta(seconds=60):
+                return JsonResponse({'status': 'failed', 'message': 'Please wait for a while before requesting again.'})
+            
+            # 生成验证码
+            verify_code = User.objects.make_random_password(length=6, allowed_chars='1234567890')
+
+            send_mail(
+                subject='ShaForum 注册验证码',
+                message="""
+                您的验证码为：{verify_code}
+                请在5分钟内完成注册。
+                请勿回复本邮件。
+                """.format(verify_code=verify_code),
+                from_email=DEFAULT_FROM_EMAIL,
+                recipient_list=[email],
+                fail_silently=False,
+            )
+            cache.set(cache_key, verify_code, timeout=300)
+            cache.set(cache_key_time, datetime.now(), timeout=60)
+            return JsonResponse({'status': 'success', 'message': 'verification code sent, expires in 5 minutes'})
+        except Exception as e:
+            return JsonResponse({'status': 'failed', 'message': str(e)})
 
 class UserRegisterView(generics.CreateAPIView):
     """
@@ -19,6 +81,7 @@ class UserRegisterView(generics.CreateAPIView):
         username: str (required)
         email: str (required)
         password: str (required)
+        code: str (required)
 
     Return:
         status: str (success or failed)
@@ -39,12 +102,20 @@ class UserRegisterView(generics.CreateAPIView):
     permission_classes = [permissions.AllowAny]
     serializer_class = UserRegisterSerializer
 
-    # TODO: add email verification, password plaintext to hash
     def post(self, request, *args, **kwargs):
         try:
+            cache_key = 'verify_code_{}'.format(request.session.session_key)
+            verify_code = cache.get(cache_key)
+            if verify_code is None:
+                return JsonResponse({'status': 'failed', 'message': 'verification code expired'})
+            elif verify_code != request.data.get('code'):
+                return JsonResponse({'status': 'failed', 'message': 'wrong verification code'})
+            cache.delete(cache_key)
+            
             serializer = UserRegisterSerializer(data=request.data)
             if serializer.is_valid():
                 serializer.save()
+                del request.session['verify_code']
                 return JsonResponse({'status': 'success'})
             else:
                 return JsonResponse({'status': 'failed', 'message': serializer.errors})
@@ -374,7 +445,7 @@ class UserAvatarView(generics.GenericAPIView):
         """
         try:
             tmpUser = self.get_object()
-            serializer = self.serializer_class(tmpUser, request.data, partial=True)
+            serializer = self.serializer_class(tmpUser, request.data, partial=True, context={'request': request})
             serializer.is_valid(raise_exception=True)
             tmpUser.avatar.delete()
             serializer.update(tmpUser, serializer.validated_data)
