@@ -14,7 +14,7 @@ urlpatterns = [
     path('token/balcklist/', TokenBlacklistView.as_view(), name='token_blacklist'),
     # 以上是simplejwt的自带路由
 
-    path('verifycode/', views.RegisterVerificationCodeView.as_view(), name='verifycode for register'),
+    path('register/verifycode/', views.RegisterVerifyCodeView.as_view(), name='verifycode for register'),
     path("register/", views.UserRegisterView.as_view(), name="register"),
     path("login/", views.UserLoginView.as_view(), name="login"),
     path('relogin/', views.UserReLoginView.as_view(), name='relogin'),
@@ -22,7 +22,10 @@ urlpatterns = [
     path("profile/<int:pk>/", views.UserProfileView.as_view(), name="profile"),
     path("user/list/", views.UserListView.as_view(), name="userlist"),
     path("user/avatar/<int:pk>/", views.UserAvatarView.as_view(), name="avatar"),
+
     path("password/change/", views.UserPasswordChangeView.as_view(), name="password_change"),
+    path("password/reset/verify/", views.UserPasswordResetVerifyView.as_view(), name="password_reset_verify"),
+    path("password/reset/", views.UserPasswordResetView.as_view(), name="password_reset"),
 
     path("notification/list/", views.NotificationListView.as_view(), name="notification_list"),
     path("notification/<int:pk>/", views.NotificationDetailView.as_view(), name="notification_detail"),

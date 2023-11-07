@@ -2,22 +2,24 @@ from django.contrib.auth import authenticate, login, logout
 from django.http import JsonResponse
 from rest_framework import generics, permissions
 from rest_framework_simplejwt.tokens import RefreshToken
+from django.core.mail import send_mail
+from django.core.cache import cache
+from django.contrib.auth.password_validation import validate_password
+from datetime import datetime, timedelta
 
 from users.permissions import UserProfilePermission, UserAvatarPermission
 from users.serializers import UserRegisterSerializer, UserProfileSerializer, UserAvatarSerializer, NotificationSerializer
 from users.models import User
 from API.CustomPagination import CustomPagination
-from django.core.mail import send_mail
-from django.core.cache import cache
-from datetime import datetime, timedelta
+
 from API.settings import DEFAULT_FROM_EMAIL
 import logging
 
 logger = logging.getLogger('django')
 
-class RegisterVerificationCodeView(generics.GenericAPIView):
+class RegisterVerifyCodeView(generics.GenericAPIView):
     """
-    Send verification code view
+    register verify code view
     
     Prameters:
         email: str (required)
@@ -25,11 +27,6 @@ class RegisterVerificationCodeView(generics.GenericAPIView):
     Return:
         status: str (success or failed)
         message: str (error message)
-    
-    Return example:
-        {
-            "status": "success"
-        }
     
     Raises:
         ValidationError: if email is invalid
@@ -87,11 +84,6 @@ class UserRegisterView(generics.CreateAPIView):
         status: str (success or failed)
         message: str (error message)
     
-    Return example:
-        {
-            "status": "success"
-        }
-    
     Raises:
         ValidationError: if username or email or password is invalid
         Exception: if username or email is already existed
@@ -115,7 +107,6 @@ class UserRegisterView(generics.CreateAPIView):
             serializer = UserRegisterSerializer(data=request.data)
             if serializer.is_valid():
                 serializer.save()
-                del request.session['verify_code']
                 return JsonResponse({'status': 'success'})
             else:
                 return JsonResponse({'status': 'failed', 'message': serializer.errors})
@@ -392,11 +383,93 @@ class UserPasswordChangeView(generics.GenericAPIView):
             new_password = request.data.get('new_password')
             user = authenticate(request, username=request.user.username, password=old_password)
             if user is not None:
+                try:
+                    validate_password(new_password, user)
+                except Exception as e:
+                    return JsonResponse({'status': 'failed', 'message': str(e)})
                 user.set_password(new_password)
                 user.save()
                 return JsonResponse({'status': 'success'})
             else:
                 return JsonResponse({'status': 'failed', 'message': 'wrong password'})
+        except Exception as e:
+            return JsonResponse({'status': 'failed', 'message': str(e)})
+
+
+class UserPasswordResetVerifyView(generics.GenericAPIView):
+    """
+    User password reset code view
+    
+    Prameters:
+        none
+        
+    Return:
+        status: str (success or failed)
+        message: str (error message)
+    """
+    def post(self, request, *args, **kwargs):
+        try:
+            email = request.user.email
+
+            cache_key = 'reset_password_{}'.format(request.session.session_key)
+            cache_key_time = 'reset_password_time_{}'.format(request.session.session_key)
+
+            last_sent = cache.get(cache_key_time)
+            if last_sent and datetime.now() - last_sent < timedelta(seconds=60):
+                return JsonResponse({'status': 'failed', 'message': 'Please wait for a while before requesting again.'})
+            
+            # 生成验证码
+            verify_code = User.objects.make_random_password(length=6, allowed_chars='1234567890')
+
+            send_mail(
+                subject='ShaForum 重置密码验证码',
+                message="""
+                您的验证码为：{verify_code}
+                请在5分钟内完成重置密码。
+                请勿回复本邮件。
+                """.format(verify_code=verify_code),
+                from_email=DEFAULT_FROM_EMAIL,
+                recipient_list=[email],
+                fail_silently=False,
+            )
+
+            cache.set(cache_key, verify_code, timeout=300)
+            cache.set(cache_key_time, datetime.now(), timeout=60)
+            return JsonResponse({'status': 'success', 'message': 'verification code sent, expires in 5 minutes'})
+        except Exception as e:
+            return JsonResponse({'status': 'failed', 'message': str(e)})
+
+class UserPasswordResetView(generics.GenericAPIView):
+    """
+    User password reset view
+    
+    Prameters:
+        code: str (required)
+        new_password: str (required)
+    
+    Return:
+        status: str (success or failed)
+        message: str (error message)
+    """
+    def post(self, request, *args, **kwargs):
+        try:
+            code = request.data.get('code')
+            new_password = request.data.get('new_password')
+            cache_key = 'reset_password_{}'.format(request.session.session_key)
+            verify_code = cache.get(cache_key)
+            if verify_code is None:
+                return JsonResponse({'status': 'failed', 'message': 'verification code expired'})
+            elif verify_code != code:
+                return JsonResponse({'status': 'failed', 'message': 'wrong verification code'})
+            cache.delete(cache_key)
+            user = request.user
+            try:
+                validate_password(new_password, user)
+            except Exception as e:
+                return JsonResponse({'status': 'failed', 'message': str(e)})
+            user.set_password(new_password)
+            user.save()
+            return JsonResponse({'status': 'success', 'message': 'password reset.'})
         except Exception as e:
             return JsonResponse({'status': 'failed', 'message': str(e)})
 
