@@ -1,5 +1,6 @@
 from django.db.models import Q
 from django.http import JsonResponse
+from notifications.models import Notification
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.generics import (
     ListAPIView,
@@ -52,7 +53,7 @@ class CommentListView(ListAPIView):
             query_filters = Q()
             for field, value in request.data.items():
                 if field in self.filter_fields:
-                    if 'contains' in self.filter_fields[field]:
+                    if "contains" in self.filter_fields[field]:
                         lookup = f"{field}__icontains"
                     else:
                         lookup = f"{field}__exact"
@@ -225,6 +226,7 @@ class CommentLikeView(GenericAPIView):
                 user=request.user, comment=comment
             )
             like_user_comment.delete()
+            Notification.objects.filter(actor=request.user, verb="likeComment").delete()
             return JsonResponse({"status": "success", "message": "unlike success"})
         except Exception as e:
             return JsonResponse({"status": "fail", "message": str(e)})
@@ -267,6 +269,9 @@ class CommentCollectView(GenericAPIView):
                 user=request.user, comment=comment
             )
             collect_user_comment.delete()
+            Notification.objects.filter(
+                actor=request.user, verb="collectComment"
+            ).delete()
             return JsonResponse({"status": "success", "message": "uncollect success"})
         except Exception as e:
             return JsonResponse({"status": "fail", "message": str(e)})

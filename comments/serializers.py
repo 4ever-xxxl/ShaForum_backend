@@ -37,6 +37,8 @@ class CommentCreateSerializer(serializers.ModelSerializer):
         if comment.parent:
             comment.reply_to = comment.parent.author
             comment.parent = comment.parent.get_root()
+        else:
+            comment.reply_to = comment.post.author
         comment.save()
         return comment
 

@@ -41,3 +41,5 @@
 启动项目         | python manage.py runserver 0.0.0.0:8000
 
 后台启动项目      | nohup python manage.py runserver 0.0.0.0:8000 &
+
+清理日志          | tail -n 100 logs/debug.log > temp.log && mv temp.log logs/debug.log

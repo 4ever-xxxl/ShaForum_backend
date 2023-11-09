@@ -3,6 +3,7 @@ from django.db.models import Q
 from django.http import HttpResponse, JsonResponse
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics
+from notifications.models import Notification
 from notifications.signals import notify
 from API.CustomPagination import CustomPagination
 from comments.models import Comment
@@ -353,6 +354,7 @@ class PostLikeView(generics.GenericAPIView):
             post = self.get_object()
             like_user_post = LikeUserPost.objects.get(user=request.user, post=post)
             like_user_post.delete()
+            Notification.objects.filter(actor=request.user, verb="likePost", target=post).delete()
             return JsonResponse({"status": "success", "message": "unlike success"})
         except Exception as e:
             return JsonResponse({"status": "fail", "message": str(e)})
@@ -395,6 +397,7 @@ class PostCollectView(generics.GenericAPIView):
                 user=request.user, post=post
             )
             collect_user_post.delete()
+            Notification.objects.filter(actor=request.user, verb="collectPost", target=post).delete()
             return JsonResponse({"status": "success", "message": "uncollect success"})
         except Exception as e:
             return JsonResponse({"status": "fail", "message": str(e)})
