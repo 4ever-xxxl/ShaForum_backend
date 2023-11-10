@@ -153,6 +153,7 @@ DEFAULT_FROM_EMAIL = 'lx10ng@qq.com'
 SIMPLE_JWT = {
     'USER_ID_FIELD': 'userID',
     "ACCESS_TOKEN_LIFETIME": datetime.timedelta(days=1),
+    "REFRESH_TOKEN_LIFETIME": datetime.timedelta(days=7),
 }
 
 # 上传文件的路径

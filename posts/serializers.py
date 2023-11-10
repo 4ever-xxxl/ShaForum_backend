@@ -41,7 +41,6 @@ class PostBaseSerializer(serializers.ModelSerializer):
     tags = TagListSerializerField()
     plate = PlateDescSerializer()
     author = UserDescSerializer()
-    content = serializers.SerializerMethodField()
     like_count = serializers.SerializerMethodField()
     collect_count = serializers.SerializerMethodField()
     has_liked = serializers.SerializerMethodField()
@@ -54,9 +53,6 @@ class PostBaseSerializer(serializers.ModelSerializer):
                   'like_count', 'collect_count', 'has_liked', 'has_collected')
         read_only_fields = ("__all__",)
 
-    def get_content(self, obj):
-        return obj.content
-    
     def get_like_count(self, obj):
         return obj.whoLikes.count()
     
@@ -99,21 +95,12 @@ class PostsListSerializer(PostBaseSerializer):
 class PostsDetailSerializer(PostBaseSerializer):
     tags = TagListSerializerField(required=False)
     plate_id = serializers.IntegerField(write_only=True, required=False)
-    body_html = serializers.SerializerMethodField()
-    toc_html = serializers.SerializerMethodField()
 
     class Meta:
         model = Post
         fields = "__all__"
         read_only_fields = (
-            'postID', 'author', 'coverImg', 'created', 'last_modified', 'views', 'whoLikes', 'whoCollects', 'body_html',
-            'toc_html')
-
-    def get_body_html(self, obj):
-        return obj.get_md()[0]
-
-    def get_toc_html(self, obj):
-        return obj.get_md()[1]
+            'postID', 'author', 'coverImg', 'created', 'last_modified', 'views', 'whoLikes', 'whoCollects')
     
     def validated_plate_id(self, value):
         try:

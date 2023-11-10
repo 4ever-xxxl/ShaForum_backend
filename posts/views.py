@@ -250,13 +250,16 @@ class PostActionView(generics.RetrieveUpdateDestroyAPIView):
             serializer.is_valid(raise_exception=True)
             serializer.save()
             # 通知板主
-            notify.send(
-                sender=request.user,
-                recipient=post.plate.moderator,
-                verb="updatePost",
-                description="更新了帖子",
-                target=post,
-            )
+            manage_plates = ManagePlate.objects.filter(plate=post.plate)
+            for manage_plate in manage_plates:
+                moderator = manage_plate.moderator
+                notify.send(
+                    sender=request.user,
+                    recipient=moderator,
+                    verb="updatePost",
+                    description="更新了帖子",
+                    target=post,
+                )
             return JsonResponse({"status": "success", "post": serializer.data})
         except Exception as e:
             return JsonResponse({"status": "fail", "message": str(e)})
