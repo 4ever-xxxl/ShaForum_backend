@@ -1,4 +1,5 @@
 from django.contrib.auth import authenticate, login, logout
+from django.db.models import Q
 from django.http import JsonResponse
 from rest_framework import generics, permissions
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -6,6 +7,7 @@ from django.core.mail import send_mail
 from django.core.cache import cache
 from django.contrib.auth.password_validation import validate_password
 from datetime import datetime, timedelta
+from django_filters.rest_framework import DjangoFilterBackend
 
 from users.permissions import UserProfilePermission, UserAvatarPermission
 from users.serializers import UserRegisterSerializer, UserProfileSerializer, UserAvatarSerializer, NotificationSerializer
@@ -69,6 +71,7 @@ class RegisterVerifyCodeView(generics.GenericAPIView):
             return JsonResponse({'status': 'success', 'message': 'verification code sent, expires in 5 minutes'})
         except Exception as e:
             return JsonResponse({'status': 'failed', 'message': str(e)})
+
 
 class UserRegisterView(generics.CreateAPIView):
     """
@@ -351,10 +354,38 @@ class UserListView(generics.ListAPIView):
     serializer_class = UserProfileSerializer
     queryset = User.objects.all()
     pagination_class = CustomPagination
+    filter_backends = [DjangoFilterBackend]
+    filter_fields = {
+        'userID': ['exact'],
+        'username': ['icontains'],
+        'email': ['exact'],
+        'sex': ['exact'],
+        'stuID': ['exact'],
+        'college': ['exact'],
+        'major': ['exact'],
+        'phone': ['exact'],
+    }
 
     def get(self, request, *args, **kwargs):
         try:
             queryset = self.get_queryset()
+            page = self.paginate_queryset(queryset)
+            if page is not None:
+                serializer = UserProfileSerializer(page, many=True, context={'request': request})
+                return self.get_paginated_response(serializer.data)
+            else:
+                raise Exception('page is None')
+        except Exception as e:
+            return JsonResponse({'status': 'failed', 'message': str(e)})
+        
+    def post(self, request, *args, **kwargs):
+        try:
+            query_filters = Q()
+            for field, value in request.data.items():
+                if field in self.filter_fields:
+                    lookup = '__'.join([field, self.filter_fields[field][0]])
+                    query_filters &= Q(**{lookup: value})
+            queryset = self.get_queryset().filter(query_filters)
             page = self.paginate_queryset(queryset)
             if page is not None:
                 serializer = UserProfileSerializer(page, many=True, context={'request': request})
@@ -438,6 +469,7 @@ class UserPasswordResetVerifyView(generics.GenericAPIView):
             return JsonResponse({'status': 'success', 'message': 'verification code sent, expires in 5 minutes'})
         except Exception as e:
             return JsonResponse({'status': 'failed', 'message': str(e)})
+
 
 class UserPasswordResetView(generics.GenericAPIView):
     """

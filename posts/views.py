@@ -73,13 +73,13 @@ class PostListView(generics.ListAPIView):
     filter_backends = [DjangoFilterBackend]
     filter_fields = {
         "postID": ["exact"],
-        "title": ["contains"],
-        "content": ["contains"],
+        "title": ["icontains"],
+        "content": ["icontains"],
         "author__userID": ["exact"],
-        "author__username": ["contains"],
-        "tags__name": ["contains"],
+        "author__username": ["icontains"],
+        "tags__name": ["icontains"],
         "plate__plateID": ["exact"],
-        "plate__name": ["contains"],
+        "plate__name": ["icontains"],
         "is_essence": ["exact"],
     }
 
@@ -99,10 +99,7 @@ class PostListView(generics.ListAPIView):
             query_filters = Q()
             for field, value in request.data.items():
                 if field in self.filter_fields:
-                    if 'contains' in self.filter_fields[field]:
-                        lookup = f"{field}__icontains"
-                    else:
-                        lookup = f"{field}__exact"
+                    lookup = '__'.join([field, self.filter_fields[field][0]])
                     query_filters &= Q(**{lookup: value})
             queryset = self.filter_queryset(self.get_queryset()).filter(query_filters)
             page = self.paginate_queryset(queryset)
