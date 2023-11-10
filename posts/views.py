@@ -200,7 +200,7 @@ class PostCreateView(generics.CreateAPIView):
         try:
             cpdata = request.data.copy()
             cpdata["author_id"] = request.user.userID
-            serializer = PostCreateSerializer(data=cpdata)
+            serializer = self.get_serializer(data=cpdata, context={"request": request})
             serializer.is_valid(raise_exception=True)
             serializer.save()
             new_post = Post.objects.get(postID=serializer.data["postID"])
@@ -215,8 +215,9 @@ class PostCreateView(generics.CreateAPIView):
                     description='发布了新的帖子',
                     target=new_post,
                 )
+            new_post_info = PostsDetailSerializer(new_post, context={"request": request}).data
             return JsonResponse(
-                {"status": "success", "post": PostsDetailSerializer(new_post).data}
+                {"status": "success", "post": new_post_info}
             )
         except Exception as e:
             return JsonResponse({"status": "fail", "message": str(e)})
@@ -237,7 +238,7 @@ class PostActionView(generics.RetrieveUpdateDestroyAPIView):
     def get(self, request, *args, **kwargs):
         try:
             post = self.get_object()
-            serializer = PostsDetailSerializer(post)
+            serializer = self.get_serializer(post, context={"request": request})
             post.increase_views()
             return JsonResponse({"status": "success", "post": serializer.data})
         except Exception as e:
@@ -246,7 +247,7 @@ class PostActionView(generics.RetrieveUpdateDestroyAPIView):
     def patch(self, request, *args, **kwargs):
         try:
             post = self.get_object()
-            serializer = self.get_serializer(post, data=request.data, partial=True)
+            serializer = self.get_serializer(post, data=request.data, partial=True, context={"request": request})
             serializer.is_valid(raise_exception=True)
             serializer.save()
             # 通知板主
@@ -449,7 +450,7 @@ class PostCommentView(generics.GenericAPIView):
             cpdata = request.data.copy()
             cpdata["author"] = request.user.userID
             cpdata["post"] = self.kwargs["pk"]
-            serializer = CommentCreateSerializer(data=cpdata)
+            serializer = self.get_serializer(data=cpdata, context={"request": request})
             serializer.is_valid(raise_exception=True)
             serializer.save()
             new_comment = Comment.objects.get(commentID=serializer.data["commentID"])
@@ -483,7 +484,7 @@ class PostCommentListView(generics.ListAPIView):
         try:
             post = self.get_object()
             queryset = self.filter_queryset(self.get_queryset()).filter(post=post)
-            serializer = self.get_serializer(queryset, many=True)
+            serializer = self.get_serializer(queryset, many=True, context={"request": request})
             return JsonResponse({"status": "success", "comments": serializer.data})
         except Exception as e:
             return JsonResponse({"status": "fail", "message": str(e)})
