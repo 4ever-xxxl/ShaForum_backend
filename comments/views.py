@@ -62,7 +62,7 @@ class CommentListView(ListAPIView):
             page = self.paginate_queryset(queryset)
             if page is None:
                 raise Exception("page is None")
-            serializer = self.get_serializer(page, many=True)
+            serializer = self.get_serializer(page, many=True, context={"request": request})
             return self.get_paginated_response(serializer.data)
         except Exception as e:
             return JsonResponse({"status": "fail", "message": str(e)})
@@ -86,7 +86,7 @@ class CommentCreateView(CreateAPIView):
         try:
             cpdata = request.data.copy()
             cpdata["author"] = request.user.userID
-            serializer = self.get_serializer(data=cpdata)
+            serializer = self.get_serializer(data=cpdata,context={"request": request})
             serializer.is_valid(raise_exception=True)
             new_comment = serializer.save()
 
@@ -133,8 +133,9 @@ class CommentDetailView(RetrieveAPIView):
     def get(self, request, *args, **kwargs):
         try:
             comment = self.get_object()
+            comment_detail_info = self.get_serializer_class(comment, context={"request": request}).data
             return JsonResponse(
-                {"status": "success", "message": CommentDetailSerializer(comment).data}
+                {"status": "success", "comment": comment_detail_info}
             )
         except Exception as e:
             return JsonResponse({"status": "fail", "message": str(e)})
@@ -152,8 +153,9 @@ class CommentActionView(RetrieveUpdateDestroyAPIView):
     def get(self, request, *args, **kwargs):
         try:
             comment = self.get_object()
+            comment_detail_info = CommentDetailSerializer(comment, context={"request": request}).data
             return JsonResponse(
-                {"status": "success", "message": CommentDetailSerializer(comment).data}
+                {"status": "success", "comment": comment_detail_info}
             )
         except Exception as e:
             return JsonResponse({"status": "fail", "message": str(e)})
@@ -163,7 +165,7 @@ class CommentActionView(RetrieveUpdateDestroyAPIView):
             comment = self.get_object()
             if request.user.userID != comment.author.userID:
                 raise Exception("You are not the author of this comment")
-            serializer = self.get_serializer(comment, data=request.data, partial=True)
+            serializer = self.get_serializer(comment, data=request.data, partial=True, context={"request": request})
             serializer.is_valid(raise_exception=True)
             new_comment = serializer.save()
             return JsonResponse(

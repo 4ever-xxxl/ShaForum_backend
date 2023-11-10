@@ -9,6 +9,8 @@ class CommentSerializer(serializers.ModelSerializer):
     like_count = serializers.SerializerMethodField()
     collect_count = serializers.SerializerMethodField()
     reply_count = serializers.SerializerMethodField()
+    has_liked = serializers.SerializerMethodField()
+    has_collected = serializers.SerializerMethodField()
 
     class Meta:
         model = Comment
@@ -24,6 +26,18 @@ class CommentSerializer(serializers.ModelSerializer):
 
     def get_reply_count(self, obj):
         return obj.childComments.count()
+    
+    def get_has_liked(self, obj):
+        user = self.context['request'].user
+        if user.is_authenticated:
+            return user in obj.whoLikes.all()
+        return False
+    
+    def get_has_collected(self, obj):
+        user = self.context['request'].user
+        if user.is_authenticated:
+            return user in obj.whoCollects.all()
+        return False
 
 
 class CommentCreateSerializer(serializers.ModelSerializer):
