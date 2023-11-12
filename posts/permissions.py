@@ -1,5 +1,5 @@
 from rest_framework import permissions
-
+from .models import ManagePlate
 
 class PostsActionPermission(permissions.BasePermission):
     """
@@ -16,9 +16,12 @@ class PostsActionPermission(permissions.BasePermission):
         # 管理员可以对所有文章进行操作
         if request.user.is_superuser:
             return True
+        
+        if "admin" in request.user.groups.values_list('name', flat=True):
+            return True
 
         # 版主可以对自己版块的文章进行操作
-        if view.get_object().plate in request.user.managePlates.all():
+        if ManagePlate.objects.filter(moderator=request.user, plate=view.get_object().plate).exists():
             return True
 
         # 文章的作者可以修改或删除文章, 但是不能设置精华

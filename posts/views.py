@@ -261,6 +261,16 @@ class PostActionView(generics.RetrieveUpdateDestroyAPIView):
             return JsonResponse({"status": "success", "post": serializer.data})
         except Exception as e:
             return JsonResponse({"status": "fail", "message": str(e)})
+        
+    def post(self, request, *args, **kwargs):
+        try:
+            post = self.get_object()
+            serializer = self.get_serializer(post, data=request.data, partial=True, context={"request": request})
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return JsonResponse({"status": "success", "post": serializer.data})
+        except Exception as e:
+            return JsonResponse({"status": "fail", "message": str(e)})
 
     def delete(self, request, *args, **kwargs):
         try:
