@@ -2,11 +2,40 @@ from rest_framework import serializers
 from notifications.models import Notification
 
 from users.models import User
-from posts.models import Post, Plate
-from comments.models import Comment
+from posts.models import Post, Plate, LikeUserPost, CollectUserPost
+from comments.models import Comment, LikeUserComment, CollectUserComment
 from users.descSerializers import UserDescSerializer
 from posts.descSerializers import PostDescSerializer, PlateDescSerializer
 from comments.descSerializers import CommentDescSerializer
+
+class HomeSerializer(serializers.Serializer):
+    """
+    User serializer for user home
+    """
+    active_user_count = serializers.SerializerMethodField()
+    post_count = serializers.SerializerMethodField()
+    interact_count = serializers.SerializerMethodField()
+    male_count = serializers.SerializerMethodField()
+    female_count = serializers.SerializerMethodField()
+
+    class Meta:
+        fields = "__all__"
+        read_only_fields = fields
+
+    def get_active_user_count(self, obj):
+        return User.objects.filter(is_active=True).count()
+    
+    def get_post_count(self, obj):
+        return Post.objects.all().count()
+    
+    def get_interact_count(self, obj):
+        return Comment.objects.all().count() + LikeUserPost.objects.all().count() + LikeUserComment.objects.all().count() + CollectUserPost.objects.all().count() + CollectUserComment.objects.all().count()
+    
+    def get_male_count(self, obj):
+        return User.objects.filter(sex='男').count()
+    
+    def get_female_count(self, obj):
+        return User.objects.filter(sex='女').count()
 
 class UserRegisterSerializer(serializers.ModelSerializer):
     """

@@ -14,6 +14,8 @@ urlpatterns = [
     path('token/balcklist/', TokenBlacklistView.as_view(), name='token_blacklist'),
     # 以上是simplejwt的自带路由
 
+    path('home/', views.HomeView.as_view(), name='home'),
+
     path('register/code/', views.RegisterVerifyCodeView.as_view(), name='verifycode for register'),
     path("register/", views.UserRegisterView.as_view(), name="register"),
     path("login/", views.UserLoginView.as_view(), name="login"),

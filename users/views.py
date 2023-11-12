@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 from django_filters.rest_framework import DjangoFilterBackend
 
 from users.permissions import UserProfilePermission, UserAvatarPermission
-from users.serializers import UserRegisterSerializer, UserProfileSerializer, UserAvatarSerializer, NotificationSerializer
+from users.serializers import HomeSerializer, UserRegisterSerializer, UserProfileSerializer, UserAvatarSerializer, NotificationSerializer
 from users.models import User
 from API.CustomPagination import CustomPagination
 
@@ -18,6 +18,29 @@ from API.settings import DEFAULT_FROM_EMAIL
 import logging
 
 logger = logging.getLogger('django')
+
+class HomeView(generics.GenericAPIView):
+    """
+    home view
+    
+    Prameters:
+        None
+
+    Return:
+        status: str (success or failed)
+        message: str (error message)
+    
+    Permission:
+        AllowAny
+    """
+    serializer_class = HomeSerializer
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request, *args, **kwargs):
+        try:
+            return JsonResponse({'status': 'success', 'home_info': self.serializer_class(request.user).data})
+        except Exception as e:
+            return JsonResponse({'status': 'failed', 'message': str(e)})
 
 class RegisterVerifyCodeView(generics.GenericAPIView):
     """
