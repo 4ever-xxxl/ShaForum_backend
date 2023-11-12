@@ -1,5 +1,6 @@
 from django.db.models import Q
 from django.http import JsonResponse
+from django.db import transaction
 from notifications.models import Notification
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.generics import (
@@ -180,10 +181,9 @@ class CommentActionView(RetrieveUpdateDestroyAPIView):
     def delete(self, request, *args, **kwargs):
         try:
             comment = self.get_object()
-            if request.user.userID != comment.author.userID:
-                raise Exception("You are not the author of this comment")
-            notify.fliter(recipient=comment.reply_to, action_object=comment).delete()
-            comment.delete()
+            with transaction.atomic():
+                notify.filter(recipient=comment.reply_to, action_object=comment).delete()
+                comment.delete()
             return JsonResponse({"status": "success", "message": "Delete successfully"})
         except Exception as e:
             return JsonResponse({"status": "fail", "message": str(e)})

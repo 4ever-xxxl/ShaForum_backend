@@ -1,4 +1,5 @@
 from rest_framework.permissions import BasePermission, SAFE_METHODS
+from posts.models import ManagePlate
 
 
 class CommentActionPermission(BasePermission):
@@ -12,7 +13,7 @@ class CommentActionPermission(BasePermission):
         if request.user.groups.filter(name='admin').exists():
             return True
 
-        if view.get_object().post.plate in request.user.managePlates.all():
+        if ManagePlate.objects.filter(moderator=request.user, plate=view.get_object().post.plate).exists():
             return True
 
         if request.user == view.get_object().author:
