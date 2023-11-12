@@ -14,8 +14,21 @@ class CommentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Comment
-        fields = ('commentID', 'content', 'author', 'post', 'created', 'last_modified', 'parent', 'reply_to',
-                  'like_count', 'collect_count', 'reply_count')
+        fields = (
+            "commentID",
+            "content",
+            "author",
+            "post",
+            "created",
+            "last_modified",
+            "parent",
+            "reply_to",
+            "like_count",
+            "collect_count",
+            "reply_count",
+            "has_liked",
+            "has_collected",
+        )
         read_only_fields = ("__all__",)
 
     def get_like_count(self, obj):
@@ -26,15 +39,15 @@ class CommentSerializer(serializers.ModelSerializer):
 
     def get_reply_count(self, obj):
         return obj.childComments.count()
-    
+
     def get_has_liked(self, obj):
-        user = self.context['request'].user
+        user = self.context["request"].user
         if user.is_authenticated:
             return user in obj.whoLikes.all()
         return False
-    
+
     def get_has_collected(self, obj):
-        user = self.context['request'].user
+        user = self.context["request"].user
         if user.is_authenticated:
             return user in obj.whoCollects.all()
         return False
@@ -43,8 +56,17 @@ class CommentSerializer(serializers.ModelSerializer):
 class CommentCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Comment
-        fields = ('commentID', 'content', 'author', 'post', 'created', 'last_modified', 'parent', 'reply_to')
-        read_only_fields = ('commentID', 'created', 'last_modified', 'reply_to')
+        fields = (
+            "commentID",
+            "content",
+            "author",
+            "post",
+            "created",
+            "last_modified",
+            "parent",
+            "reply_to",
+        )
+        read_only_fields = ("commentID", "created", "last_modified", "reply_to")
 
     def create(self, validated_data):
         comment = Comment.objects.create(**validated_data)
@@ -60,18 +82,14 @@ class CommentCreateSerializer(serializers.ModelSerializer):
 class CommentListSerializer(CommentSerializer):
     class Meta:
         model = Comment
-        fields = (
-            'commentID', 'content', 'author', 'post', 'created', 'last_modified', 'parent', 'reply_to', 'like_count',
-            'collect_count', 'reply_count')
+        fields = "__all__"
         read_only_fields = ("__all__",)
 
 
 class CommentDetailSerializer(CommentSerializer):
     class Meta:
         model = Comment
-        fields = (
-            'commentID', 'content', 'author', 'post', 'created', 'last_modified', 'parent', 'reply_to', 'like_count',
-            'collect_count', 'reply_count')
+        fields = "__all__"
         read_only_fields = ("__all__",)
 
 
@@ -79,9 +97,31 @@ class CommentActionSerializer(CommentSerializer):
     class Meta:
         model = Comment
         fields = (
-            'commentID', 'content', 'author', 'post', 'created', 'last_modified', 'parent', 'reply_to', 'like_count',
-            'collect_count', 'reply_count')
+            "commentID",
+            "content",
+            "author",
+            "post",
+            "created",
+            "last_modified",
+            "parent",
+            "reply_to",
+            "like_count",
+            "collect_count",
+            "reply_count",
+            "has_liked",
+            "has_collected",
+        )
         read_only_fields = (
-            'commentID', 'author', 'post', 'created', 'last_modified', 'parent', 'reply_to', 'like_count',
-            'collect_count',
-            'reply_count')
+            "commentID",
+            "author",
+            "post",
+            "created",
+            "last_modified",
+            "parent",
+            "reply_to",
+            "like_count",
+            "collect_count",
+            "reply_count",
+            "has_liked",
+            "has_collected",
+        )
