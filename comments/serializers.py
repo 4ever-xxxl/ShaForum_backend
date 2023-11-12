@@ -41,16 +41,10 @@ class CommentSerializer(serializers.ModelSerializer):
         return obj.childComments.count()
 
     def get_has_liked(self, obj):
-        user = self.context["request"].user
-        if user.is_authenticated:
-            return user in obj.whoLikes.all()
-        return False
+        return obj.whoLikes.filter(user_id=self.context["request"].user).exists()
 
     def get_has_collected(self, obj):
-        user = self.context["request"].user
-        if user.is_authenticated:
-            return user in obj.whoCollects.all()
-        return False
+        return obj.whoCollects.filter(user_id=self.context["request"].user).exists()
 
 
 class CommentCreateSerializer(serializers.ModelSerializer):
