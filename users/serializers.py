@@ -100,17 +100,32 @@ class NotificationSerializer(serializers.ModelSerializer):
     def get_target(self, obj):
         target_object_id = str(obj.target_object_id)
         if obj.verb in ['newPost', 'updatePost', 'deletePost', 'likePost', 'collectPost', 'commentPost']:
-            return PostDescSerializer(Post.objects.get(postID=target_object_id)).data
+            if Post.objects.filter(postID=target_object_id).exists():
+                return PostDescSerializer(Post.objects.get(postID=target_object_id)).data
+            else:
+                return {"postID": target_object_id, "title": "该帖子已被删除"}
         if obj.verb in ['moderator', 'removeModerator']:
-            return PlateDescSerializer(Plate.objects.get(plateID=target_object_id)).data
+            if Plate.objects.filter(plateID=target_object_id).exists():
+                return PlateDescSerializer(Plate.objects.get(plateID=target_object_id)).data
+            else:
+                return {"plateID": target_object_id, "name": "该板块已被删除"}
         if obj.verb in ['replyComment', 'likeComment', 'collectComment']:
-            return CommentDescSerializer(Comment.objects.get(commentID=target_object_id)).data
+            if Comment.objects.filter(commentID=target_object_id).exists():
+                return CommentDescSerializer(Comment.objects.get(commentID=target_object_id)).data
+            else:
+                return {"commentID": target_object_id, "content": "该评论已被删除"}
         return None
     
     def get_action_object(self, obj):
         action_object_object_id = str(obj.action_object_object_id)
         if obj.verb in ['commentPost', 'replyComment']:
-            return CommentDescSerializer(Comment.objects.get(commentID=action_object_object_id)).data
+            if Comment.objects.filter(commentID=action_object_object_id).exists():
+                return CommentDescSerializer(Comment.objects.get(commentID=action_object_object_id)).data
+            else:
+                return {"commentID": action_object_object_id, "content": "该评论已被删除"}
         if obj.verb in ['likeComment', 'collectComment']:
-            return PostDescSerializer(Post.objects.get(postID=action_object_object_id)).data
+            if Post.objects.filter(postID=action_object_object_id).exists():
+                return PostDescSerializer(Post.objects.get(postID=action_object_object_id)).data
+            else:
+                return {"postID": action_object_object_id, "title": "该帖子已被删除"}
         return None

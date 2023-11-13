@@ -206,12 +206,12 @@ class CommentLikeView(GenericAPIView):
             like_user_comment, created = LikeUserComment.objects.get_or_create(
                 user=request.user, comment=comment
             )
-            if created:
+            if created and request.user.userID != comment.author.userID:
                 notify.send(
                     sender=request.user,
                     recipient=comment.author,
                     verb="likeComment",
-                    desription="点赞了你的评论",
+                    description="点赞了你的评论",
                     action_object=comment.post,
                     target=comment,
                 )
@@ -227,8 +227,9 @@ class CommentLikeView(GenericAPIView):
             like_user_comment = LikeUserComment.objects.get(
                 user=request.user, comment=comment
             )
-            like_user_comment.delete()
-            Notification.objects.filter(actor=request.user, verb="likeComment").delete()
+            with transaction.atomic():
+                like_user_comment.delete()
+                Notification.objects.filter(actor=request.user, verb="likeComment").delete()
             return JsonResponse({"status": "success", "message": "unlike success"})
         except Exception as e:
             return JsonResponse({"status": "fail", "message": str(e)})
@@ -247,12 +248,12 @@ class CommentCollectView(GenericAPIView):
             collect_user_comment, created = CollectUserComment.objects.get_or_create(
                 user=request.user, comment=comment
             )
-            if created:
+            if created and request.user.userID != comment.author.userID:
                 notify.send(
                     sender=request.user,
                     recipient=comment.author,
                     verb="collectComment",
-                    desription="收藏了你的评论",
+                    description="收藏了你的评论",
                     action_object=comment.post,
                     target=comment,
                 )
@@ -270,10 +271,11 @@ class CommentCollectView(GenericAPIView):
             collect_user_comment = CollectUserComment.objects.get(
                 user=request.user, comment=comment
             )
-            collect_user_comment.delete()
-            Notification.objects.filter(
-                actor=request.user, verb="collectComment"
-            ).delete()
+            with transaction.atomic():
+                collect_user_comment.delete()
+                Notification.objects.filter(
+                    actor=request.user, verb="collectComment"
+                ).delete()
             return JsonResponse({"status": "success", "message": "uncollect success"})
         except Exception as e:
             return JsonResponse({"status": "fail", "message": str(e)})
